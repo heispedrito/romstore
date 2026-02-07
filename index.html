@@ -90,14 +90,40 @@
         .prev { left: 20px; } .next { right: 20px; }
 
         /* --- CATEGORÍAS VISUALES --- */
-        .cat-section { padding: 60px 40px; max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .cat-section { padding: 60px 20px; /* Reducido el padding lateral para ganar espacio en móvil */
+    max-width: 1400px; 
+    margin: 0 auto; 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px; 
+    box-sizing: border-box; /* Asegura que el padding no sume ancho extra */}
         .cat-card { position: relative; height: 500px; border-radius: 20px; overflow: hidden; cursor: pointer; border: 1px solid #222; }
         .cat-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; filter: brightness(0.6); }
         .cat-card:hover img { transform: scale(1.05); filter: brightness(0.8); }
         .cat-info { position: absolute; bottom: 40px; left: 40px; z-index: 5; }
-        .cat-info h2 { font-family: var(--syne); font-size: 2.5rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: -1px; }
+        .cat-info h2 { font-family: var(--syne); 
+    font-size: clamp(1.5rem, 5vw, 2.5rem); /* El texto se encoge automáticamente si no cabe */
+    text-transform: uppercase; 
+    margin-bottom: 15px; 
+    letter-spacing: -1px; 
+    word-wrap: break-word; /* Evita que la palabra larga se salga */}
         .cat-btn { background: white; color: black; padding: 12px 25px; border-radius: 50px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; font-family: var(--syne); display: inline-block; transition: 0.3s; }
         .cat-card:hover .cat-btn { background: var(--primary); color: white; }
+        @media (max-width: 768px) {
+    .cat-section {
+        grid-template-columns: 1fr; /* Pone una sección sobre la otra en móviles */
+        padding: 40px 15px;
+    }
+    
+    .cat-card {
+        height: 400px; /* Reduce un poco la altura en móviles para mejor navegación */
+    }
+
+    .cat-info {
+        bottom: 25px; /* Ajusta la posición del texto en pantallas pequeñas */
+        left: 20px;
+    }
+}
 
         /* --- PRODUCTOS DESTACADOS --- */
         .featured-section { padding: 40px; max-width: 1400px; margin: 0 auto; }
