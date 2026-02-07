@@ -22,18 +22,35 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: var(--bg); color: var(--text); font-family: var(--nunito); overflow-x: hidden; }
 
-        /* --- HEADER --- */
+        /* --- HEADER ADAPTADO --- */
         header {
             position: fixed; top: 0; width: 100%; z-index: 1000;
             padding: 20px 0; transition: var(--transition);
             background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
         }
         header.scrolled { background: rgba(10, 10, 10, 0.98); padding: 12px 0; border-bottom: 1px solid #222; }
-        .nav-wrapper { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; }
+        
+        .nav-wrapper { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr; /* Izq, Centro, Der */
+            align-items: center; 
+            padding: 0 40px; 
+        }
+
+        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: white; justify-self: start; }
+
+        .logo-container { justify-self: center; }
+        .logo-img { height: 40px; width: auto; cursor: pointer; display: block; }
         .logo { font-family: var(--syne); font-size: 1.8rem; text-decoration: none; color: white; cursor: pointer; letter-spacing: -1px; }
         .logo span { color: var(--primary); }
+
+        .nav-menu-container { justify-self: start; }
         .nav-menu { display: flex; gap: 30px; list-style: none; }
         .nav-menu a { color: white; text-decoration: none; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; font-family: var(--syne); cursor: pointer; }
+        
+        .header-right { justify-self: end; display: flex; align-items: center; }
         .cart-trigger { position: relative; cursor: pointer; font-size: 1.2rem; }
         .cart-count { position: absolute; top: -8px; right: -10px; background: var(--primary); font-size: 0.65rem; padding: 2px 6px; border-radius: 50%; font-weight: 800; }
 
@@ -42,7 +59,7 @@
         #view-home { display: block; padding-top: 0; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- BANNER --- */
+        /* --- BANNER ADAPTADO --- */
         .hero-slider { position: relative; height: 100vh; width: 100%; overflow: hidden; }
         .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease-in-out; z-index: 1; cursor: pointer; }
         .slide.active { opacity: 1; z-index: 2; }
@@ -70,7 +87,8 @@
         .section-title { font-family: var(--syne); font-size: 1.5rem; text-transform: uppercase; margin-bottom: 30px; letter-spacing: 1px; border-left: 4px solid var(--primary); padding-left: 15px; }
 
         /* --- MÉTODOS DE PAGO --- */
-        .payment-wrapper { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .payment-wrapper { padding: 40px; max-width: 1400px; margin: 0 auto; text-align: center; }
+        .payment-title { font-family: var(--syne); font-size: 0.9rem; text-transform: uppercase; color: #555; margin-bottom: 25px; letter-spacing: 2px; }
         .payment-container {
             background: #000; border: 1px solid #222; border-radius: 25px; padding: 30px;
             display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; position: relative; overflow: hidden;
@@ -123,7 +141,7 @@
         select { width: 100%; padding: 15px; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 12px; margin-top: 5px; cursor: pointer; outline: none; }
         .buy-btn { width: 100%; padding: 20px; margin-top: 20px; border: none; border-radius: 12px; background: linear-gradient(90deg, #111 0%, var(--primary) 100%); color: white; font-family: var(--syne); font-weight: 800; text-transform: uppercase; cursor: pointer; transition: 0.3s; letter-spacing: 1px; }
 
-        /* --- CARRITO --- */
+        /* --- CARRITO (Original Minimalist) --- */
         .cart-sidebar { position: fixed; top: 0; right: -100%; width: 380px; height: 100%; background: #0c0c0c; z-index: 2000; transition: var(--transition); padding: 40px 30px; display: flex; flex-direction: column; border-left: 1px solid #222; }
         .cart-sidebar.active { right: 0; }
         .cart-item { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
@@ -139,10 +157,30 @@
         .social-links a { color: #444; font-size: 1.8rem; transition: 0.3s; }
         .social-links a:hover { color: var(--primary); transform: translateY(-5px); }
 
+        /* --- MEDIA QUERIES PARA MÓVIL --- */
         @media (max-width: 768px) { 
-            .cat-section { grid-template-columns: 1fr; }
+            .nav-wrapper { padding: 0 20px; }
+            .menu-toggle { display: block; }
+            
+            /* Navegación completa oculta en móvil (se activa por JS) */
+            .nav-menu-container {
+                position: fixed; top: 0; left: -100%; width: 80%; height: 100vh;
+                background: #0a0a0a; z-index: 1001; transition: 0.4s ease;
+                padding: 100px 40px; border-right: 1px solid #222;
+            }
+            .nav-menu-container.active { left: 0; }
+            .nav-menu { flex-direction: column; gap: 25px; }
+            .nav-menu a { font-size: 1.2rem; }
+
+            .hero-slider { height: 60vh; } /* Altura ajustada para móvil */
+            .cat-section { grid-template-columns: 1fr; padding: 20px; }
+            .cat-card { height: 350px; }
             .cart-sidebar { width: 100%; } 
-            .product-container { grid-template-columns: 1fr; } 
+            .product-container { grid-template-columns: 1fr; padding: 20px; } 
+            .logo { font-size: 1.4rem; }
+            .logo-img { height: 30px; }
+            .payment-container { gap: 15px; padding: 20px; }
+            .payment-item { min-width: 80px; }
         }
     </style>
 </head>
@@ -150,19 +188,32 @@
 
     <header id="main-header">
         <div class="nav-wrapper">
-            <a onclick="showView('view-home')" class="logo">ROM<span>STORE</span></a>
-            <nav>
+            <div class="menu-toggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+
+            <div class="logo-container">
+                <img src="img/romlogo.png" alt="ROMSTORE" class="logo-img" onclick="showView('view-home')">
+            </div>
+
+            <div class="nav-menu-container" id="nav-menu-container">
+                <div class="menu-toggle" style="position: absolute; top: 25px; left: 20px;" onclick="toggleMobileMenu()">
+                    <i class="fas fa-times"></i>
+                </div>
                 <ul class="nav-menu">
-                    <li><a onclick="showView('view-home')">Inicio</a></li>
-                    <li><a onclick="renderCatalog('Damas')">Damas</a></li>
-                    <li><a onclick="renderCatalog('Caballeros')">Caballeros</a></li>
-                    <li><a onclick="renderCatalog('¡OFERTAS!')" style="color: var(--primary);">¡Ofertas!</a></li>
-                    <li><a href="#contacto">Contacto</a></li>
+                    <li><a onclick="closeAndShow('view-home')">Inicio</a></li>
+                    <li><a onclick="closeAndRender('Damas')">Damas</a></li>
+                    <li><a onclick="closeAndRender('Caballeros')">Caballeros</a></li>
+                    <li><a onclick="closeAndRender('¡OFERTAS!')" style="color: var(--primary);">¡Ofertas!</a></li>
+                    <li><a href="#contacto" onclick="toggleMobileMenu()">Contacto</a></li>
                 </ul>
-            </nav>
-            <div class="cart-trigger" onclick="toggleCart()">
-                <i class="fas fa-shopping-bag"></i>
-                <span class="cart-count" id="cart-count">0</span>
+            </div>
+
+            <div class="header-right">
+                <div class="cart-trigger" onclick="toggleCart()">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cart-count">0</span>
+                </div>
             </div>
         </div>
     </header>
@@ -206,6 +257,7 @@
         </section>
 
         <section class="payment-wrapper">
+            <h3 class="payment-title">MÉTODOS DE PAGO</h3>
             <div class="payment-container">
                 <div class="payment-item">
                     <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 1.9 1.55 3.28 3.68 3.75V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
@@ -262,7 +314,7 @@
     </main>
 
     <footer id="contacto">
-        <h2 class="logo" style="cursor: default; margin-bottom: 10px;">ROM<span>STORE</span></h2>
+        <img src="img/romlogo.png" alt="ROMSTORE" style="height: 35px; margin-bottom: 10px;">
         <p style="font-size: 0.7rem; color:#555; text-transform:uppercase; letter-spacing:3px;">Elite Sportswear & Style</p>
         <div class="social-links">
             <a href="https://instagram.com/rom.vzla" target="_blank"><i class="fab fa-instagram"></i></a>
@@ -310,6 +362,21 @@
         let cart = [];
         let currentProduct = null;
         let currentImgIdx = 0;
+
+        // --- FUNCIONES MÓVILES NUEVAS ---
+        function toggleMobileMenu() {
+            document.getElementById('nav-menu-container').classList.toggle('active');
+        }
+
+        function closeAndShow(viewId) {
+            toggleMobileMenu();
+            showView(viewId);
+        }
+
+        function closeAndRender(cat) {
+            toggleMobileMenu();
+            renderCatalog(cat);
+        }
 
         // --- SLIDER ---
         let currentSlide = 0;
