@@ -90,40 +90,19 @@
         .prev { left: 20px; } .next { right: 20px; }
 
         /* --- CATEGORÍAS VISUALES --- */
-        .cat-section { padding: 60px 20px; /* Reducido el padding lateral para ganar espacio en móvil */
-    max-width: 1400px; 
-    margin: 0 auto; 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 20px; 
-    box-sizing: border-box; /* Asegura que el padding no sume ancho extra */}
+        .cat-section { padding: 60px 20px; max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; box-sizing: border-box; }
         .cat-card { position: relative; height: 500px; border-radius: 20px; overflow: hidden; cursor: pointer; border: 1px solid #222; }
         .cat-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; filter: brightness(0.6); }
         .cat-card:hover img { transform: scale(1.05); filter: brightness(0.8); }
         .cat-info { position: absolute; bottom: 40px; left: 40px; z-index: 5; }
-        .cat-info h2 { font-family: var(--syne); 
-    font-size: clamp(1.5rem, 5vw, 2.5rem); /* El texto se encoge automáticamente si no cabe */
-    text-transform: uppercase; 
-    margin-bottom: 15px; 
-    letter-spacing: -1px; 
-    word-wrap: break-word; /* Evita que la palabra larga se salga */}
+        .cat-info h2 { font-family: var(--syne); font-size: clamp(1.5rem, 5vw, 2.5rem); text-transform: uppercase; margin-bottom: 15px; letter-spacing: -1px; word-wrap: break-word; }
         .cat-btn { background: white; color: black; padding: 12px 25px; border-radius: 50px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; font-family: var(--syne); display: inline-block; transition: 0.3s; }
         .cat-card:hover .cat-btn { background: var(--primary); color: white; }
         @media (max-width: 768px) {
-    .cat-section {
-        grid-template-columns: 1fr; /* Pone una sección sobre la otra en móviles */
-        padding: 40px 15px;
-    }
-    
-    .cat-card {
-        height: 400px; /* Reduce un poco la altura en móviles para mejor navegación */
-    }
-
-    .cat-info {
-        bottom: 25px; /* Ajusta la posición del texto en pantallas pequeñas */
-        left: 20px;
-    }
-}
+            .cat-section { grid-template-columns: 1fr; padding: 40px 15px; }
+            .cat-card { height: 400px; }
+            .cat-info { bottom: 25px; left: 20px; }
+        }
 
         /* --- PRODUCTOS DESTACADOS --- */
         .featured-section { padding: 40px; max-width: 1400px; margin: 0 auto; }
@@ -385,6 +364,7 @@
     </div>
 
     <script>
+        // --- DATOS DEL PRODUCTO (Sin cambios) ---
         const products = [
             { id: 6, name: "Franela Nike Dri-fit", price: 15.99, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/NdL7ktJf/Whats-App-Image-2026-01-21-at-02-52-17.jpg", "https://i.ibb.co/cM7Yx4d/Whats-App-Image-2026-01-21-at-02-52-17-3.jpg", "https://i.ibb.co/S4D9NmHn/Whats-App-Image-2026-01-21-at-02-52-17-1.jpg", "https://i.ibb.co/pj2P74r2/Whats-App-Image-2026-01-21-at-02-52-17-4.jpg"], stock: { "Negro": ["M", "L"], "Gris": ["M", "L"], "Vinotinto": ["M", "L"] } },
             { id: 1, name: "Short Nike con licra V1", price: 20, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/B2M1yqG9/Whats-App-Image-2026-01-21-at-01-16-51.jpg", "https://i.ibb.co/67LdJpp4/Whats-App-Image-2026-01-21-at-00-18-52.jpg", "https://i.ibb.co/4Z8BxT4d/Whats-App-Image-2026-01-21-at-00-18-52-1.jpg"], stock: { "Azul": ["XL", "L"], "Gris": ["S"] } },
@@ -408,22 +388,174 @@
         let currentProduct = null;
         let currentImgIdx = 0;
 
-        // --- FUNCIONES MÓVILES NUEVAS ---
-        function toggleMobileMenu() {
-            document.getElementById('nav-menu-container').classList.toggle('active');
+        // --- GESTIÓN DE ESTADO (HISTORY API) ---
+        
+        // Configurar estado inicial al cargar
+        window.addEventListener('load', () => {
+            // Reemplaza el estado actual para que no sea null
+            history.replaceState({ view: 'view-home' }, '', window.location.pathname);
+            renderFeatured(); // Carga productos iniciales
+        });
+
+        // Escuchar el botón "Atrás" del navegador
+        window.addEventListener('popstate', (event) => {
+            const state = event.state;
+            
+            // 1. Cerrar Modales si no están en el estado actual
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const menuContainer = document.getElementById('nav-menu-container');
+
+            if (state && state.modal === 'cart') {
+                cartSidebar.classList.add('active');
+            } else {
+                cartSidebar.classList.remove('active');
+            }
+
+            if (state && state.modal === 'menu') {
+                menuContainer.classList.add('active');
+            } else {
+                menuContainer.classList.remove('active');
+            }
+
+            // 2. Gestionar Navegación entre Vistas
+            if (state && state.view) {
+                // Si el estado tiene parámetros específicos (como ID de producto o categoría)
+                if (state.view === 'view-product' && state.productId) {
+                    loadProductView(state.productId); // Carga la data sin hacer pushState
+                } else if (state.view === 'view-catalog' && state.category) {
+                    loadCatalogView(state.category); // Carga la data sin hacer pushState
+                } else {
+                    // Vista simple (home)
+                    document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
+                    document.getElementById(state.view).style.display = 'block';
+                    window.scrollTo(0,0);
+                }
+            } else {
+                // Fallback por si el estado es null
+                document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
+                document.getElementById('view-home').style.display = 'block';
+            }
+        });
+
+        // --- FUNCIONES DE NAVEGACIÓN Y RENDERIZADO ---
+
+        // Función auxiliar para mostrar vistas sin agregar al historial (Uso interno del popstate)
+        function setViewVisible(viewId) {
+            document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
+            document.getElementById(viewId).style.display = 'block';
+            window.scrollTo(0,0);
         }
 
+        // Navegación Principal (Agrega al historial)
+        function showView(viewId) {
+            history.pushState({ view: viewId }, '', '#'+viewId.replace('view-', ''));
+            setViewVisible(viewId);
+        }
+
+        // Renderizar Catálogo
+        function renderCatalog(cat) {
+            history.pushState({ view: 'view-catalog', category: cat }, '', '#catalog');
+            loadCatalogView(cat);
+        }
+
+        function loadCatalogView(cat) {
+            const grid = document.getElementById('catalog-grid');
+            document.getElementById('catalog-title').innerText = cat;
+            const filtered = (cat === '¡OFERTAS!') ? products.filter(p => p.onSale) : products.filter(p => p.category.includes(cat));
+            grid.innerHTML = filtered.map(p => `
+                <div class="product-card" onclick="showProduct(${p.id})">
+                    ${p.outOfStock ? '<div class="badge-sale" style="background:#555; border-color:#555;">AGOTADO</div>' : (p.onSale ? '<div class="badge-sale">SALE</div>' : '')}
+                    <img src="${p.images[0]}" style="${p.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
+                    <div class="product-card-info">
+                        <h3>${p.name}</h3>
+                        <div class="price-wrapper">
+                            ${p.onSale ? `<span class="price-old">${p.oldPrice}$</span>` : ''}
+                            <span class="price-new">${p.price}$</span>
+                        </div>
+                    </div>
+                </div>`).join('');
+            setViewVisible('view-catalog');
+        }
+
+        // Mostrar Producto
+        function showProduct(id) {
+            history.pushState({ view: 'view-product', productId: id }, '', '#product');
+            loadProductView(id);
+        }
+
+        function loadProductView(id) {
+            currentProduct = products.find(p => p.id === id);
+            currentImgIdx = 0;
+            const detail = document.getElementById('product-detail-content');
+            detail.innerHTML = `
+                <div class="gallery-side">
+                    <div class="back-nav" onclick="history.back()"><i class="fas fa-arrow-left"></i> VOLVER</div>
+                    <div class="gallery-wrapper">
+                        ${currentProduct.images.length > 1 ? `<button class="gallery-arrow arrow-prev" onclick="changeImgStep(-1)"><i class="fas fa-chevron-left"></i></button><button class="gallery-arrow arrow-next" onclick="changeImgStep(1)"><i class="fas fa-chevron-right"></i></button>` : ''}
+                        <img id="main-img" class="gallery-main-img" src="${currentProduct.images[0]}" style="${currentProduct.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
+                    </div>
+                    <div class="thumbs-grid">${currentProduct.images.map((img, i) => `<div class="thumb ${i===0?'active':''}" onclick="setImg(${i})"><img src="${img}" style="width:100%;height:100%;object-fit:cover;"></div>`).join('')}</div>
+                </div>
+                <div class="details-side">
+                    <h1 style="font-family: var(--syne); font-size: 1.8rem; text-transform: uppercase;">${currentProduct.name}</h1>
+                    <div class="price-tag-container">${currentProduct.onSale ? `<span class="price-tag-old">${currentProduct.oldPrice}$</span><span class="price-tag-new">${currentProduct.price}$</span>` : `<span class="price-tag-new">${currentProduct.price}$</span>`}</div>
+                    <div style="margin-bottom:15px;"><label style="font-weight:800; font-size:0.65rem; color:#444;">COLOR</label>
+                        <select id="p-colors" onchange="updateSizes()" ${currentProduct.outOfStock ? 'disabled' : ''}><option value="" disabled selected>Elegir color</option>${Object.keys(currentProduct.stock).map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+                    </div>
+                    <div style="margin-bottom:30px;"><label style="font-weight:800; font-size:0.65rem; color:#444;">TALLA</label>
+                        <select id="p-sizes" ${currentProduct.outOfStock ? 'disabled' : ''}><option value="" disabled selected>Elegir talla</option></select>
+                    </div>
+                    <button class="buy-btn" onclick="addToCart()" ${currentProduct.outOfStock ? 'disabled style="background:#333; cursor:not-allowed;"' : ''}>${currentProduct.outOfStock ? 'AGOTADO' : 'Añadir a la bolsa'}</button>
+                </div>`;
+            setViewVisible('view-product');
+        }
+
+        // --- FUNCIONES MÓVILES Y CARRITO (CON HISTORIAL) ---
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('nav-menu-container');
+            const isActive = menu.classList.contains('active');
+            
+            if (!isActive) {
+                // Abrir menú y guardar en historial
+                history.pushState({ modal: 'menu' }, '', '#menu');
+                menu.classList.add('active');
+            } else {
+                // Cerrar menú: Si fue abierto por historial, retrocedemos
+                // Si el usuario lo cierra manualmente, retrocedemos el historial para quitar el estado 'menu'
+                history.back();
+            }
+        }
+
+        function toggleCart() {
+            const sidebar = document.getElementById('cart-sidebar');
+            const isActive = sidebar.classList.contains('active');
+
+            if (!isActive) {
+                // Abrir carrito y guardar en historial
+                history.pushState({ modal: 'cart' }, '', '#cart');
+                sidebar.classList.add('active');
+            } else {
+                // Cerrar carrito manualmente (trigger de back para mantener consistencia)
+                history.back(); 
+            }
+        }
+
+        // Funciones auxiliares para el menú (adaptadas para cerrar correctamente)
         function closeAndShow(viewId) {
-            toggleMobileMenu();
-            showView(viewId);
+            // Si el menú está abierto, history.back() lo cerrará via popstate
+            // Luego necesitamos navegar a la vista
+            history.back(); // Cierra menú
+            setTimeout(() => showView(viewId), 50); // Navega (pequeño delay para permitir cierre UI)
         }
 
         function closeAndRender(cat) {
-            toggleMobileMenu();
-            renderCatalog(cat);
+            history.back(); // Cierra menú
+            setTimeout(() => renderCatalog(cat), 50); // Navega
         }
 
-        // --- SLIDER ---
+        // --- LÓGICA DE PRODUCTO Y SLIDER (Original) ---
+        
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const dots = document.querySelectorAll('.dot');
@@ -438,13 +570,6 @@
 
         function updateSlider() {
             slides.forEach((s, i) => { s.classList.toggle('active', i === currentSlide); dots[i].classList.toggle('active', i === currentSlide); });
-        }
-
-        // --- NAVEGACIÓN ---
-        function showView(viewId) {
-            document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
-            document.getElementById(viewId).style.display = 'block';
-            window.scrollTo(0,0);
         }
 
         function renderFeatured() {
@@ -464,74 +589,35 @@
                 </div>`).join('');
         }
 
-        function renderCatalog(cat) {
-            const grid = document.getElementById('catalog-grid');
-            document.getElementById('catalog-title').innerText = cat;
-            const filtered = (cat === '¡OFERTAS!') ? products.filter(p => p.onSale) : products.filter(p => p.category.includes(cat));
-            grid.innerHTML = filtered.map(p => `
-                <div class="product-card" onclick="showProduct(${p.id})">
-                    ${p.outOfStock ? '<div class="badge-sale" style="background:#555; border-color:#555;">AGOTADO</div>' : (p.onSale ? '<div class="badge-sale">SALE</div>' : '')}
-                    <img src="${p.images[0]}" style="${p.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
-                    <div class="product-card-info">
-                        <h3>${p.name}</h3>
-                        <div class="price-wrapper">
-                            ${p.onSale ? `<span class="price-old">${p.oldPrice}$</span>` : ''}
-                            <span class="price-new">${p.price}$</span>
-                        </div>
-                    </div>
-                </div>`).join('');
-            showView('view-catalog');
-        }
-
-        function showProduct(id) {
-            currentProduct = products.find(p => p.id === id);
-            currentImgIdx = 0;
-            const detail = document.getElementById('product-detail-content');
-            detail.innerHTML = `
-                <div class="gallery-side">
-                    <div class="back-nav" onclick="showView('view-home')"><i class="fas fa-arrow-left"></i> INICIO</div>
-                    <div class="gallery-wrapper">
-                        ${currentProduct.images.length > 1 ? `<button class="gallery-arrow arrow-prev" onclick="changeImgStep(-1)"><i class="fas fa-chevron-left"></i></button><button class="gallery-arrow arrow-next" onclick="changeImgStep(1)"><i class="fas fa-chevron-right"></i></button>` : ''}
-                        <img id="main-img" class="gallery-main-img" src="${currentProduct.images[0]}" style="${currentProduct.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
-                    </div>
-                    <div class="thumbs-grid">${currentProduct.images.map((img, i) => `<div class="thumb ${i===0?'active':''}" onclick="setImg(${i})"><img src="${img}" style="width:100%;height:100%;object-fit:cover;"></div>`).join('')}</div>
-                </div>
-                <div class="details-side">
-                    <h1 style="font-family: var(--syne); font-size: 1.8rem; text-transform: uppercase;">${currentProduct.name}</h1>
-                    <div class="price-tag-container">${currentProduct.onSale ? `<span class="price-tag-old">${currentProduct.oldPrice}$</span><span class="price-tag-new">${currentProduct.price}$</span>` : `<span class="price-tag-new">${currentProduct.price}$</span>`}</div>
-                    <div style="margin-bottom:15px;"><label style="font-weight:800; font-size:0.65rem; color:#444;">COLOR</label>
-                        <select id="p-colors" onchange="updateSizes()" ${currentProduct.outOfStock ? 'disabled' : ''}><option value="" disabled selected>Elegir color</option>${Object.keys(currentProduct.stock).map(c => `<option value="${c}">${c}</option>`).join('')}</select>
-                    </div>
-                    <div style="margin-bottom:30px;"><label style="font-weight:800; font-size:0.65rem; color:#444;">TALLA</label>
-                        <select id="p-sizes" ${currentProduct.outOfStock ? 'disabled' : ''}><option value="" disabled selected>Elegir talla</option></select>
-                    </div>
-                    <button class="buy-btn" onclick="addToCart()" ${currentProduct.outOfStock ? 'disabled style="background:#333; cursor:not-allowed;"' : ''}>${currentProduct.outOfStock ? 'AGOTADO' : 'Añadir a la bolsa'}</button>
-                </div>`;
-            showView('view-product');
-        }
-
+        // Utilidades de Producto (Imágenes, Tallas, Compra)
         function setImg(i) { currentImgIdx = i; document.getElementById('main-img').src = currentProduct.images[i]; document.querySelectorAll('.thumb').forEach((t, idx) => t.classList.toggle('active', idx === i)); }
         function changeImgStep(s) { currentImgIdx = (currentImgIdx + s + currentProduct.images.length) % currentProduct.images.length; setImg(currentImgIdx); }
         function updateSizes() { const color = document.getElementById('p-colors').value; const sizes = currentProduct.stock[color] || []; const sSelect = document.getElementById('p-sizes'); sSelect.innerHTML = sizes.length === 1 ? `<option value="${sizes[0]}">${sizes[0]}</option>` : '<option value="" disabled selected>Elegir talla</option>' + sizes.map(s => `<option value="${s}">${s}</option>`).join(''); }
-        function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('active'); }
+        
         function addToCart() {
             if(currentProduct.outOfStock) return;
             const color = document.getElementById('p-colors').value; const size = document.getElementById('p-sizes').value;
             if(!color || !size) return alert("Selecciona color y talla");
-            cart.push({ ...currentProduct, selectedColor: color, selectedSize: size }); updateCartUI(); toggleCart();
+            cart.push({ ...currentProduct, selectedColor: color, selectedSize: size }); 
+            updateCartUI(); 
+            // Abrir carrito usando la nueva lógica (pushState)
+            toggleCart();
         }
+
         function updateCartUI() {
             document.getElementById('cart-count').innerText = cart.length;
             document.getElementById('cart-items').innerHTML = cart.map((item, i) => `<div class="cart-item"><img src="${item.images[0]}"><div class="cart-item-info"><p>${item.name}</p><span>${item.selectedColor} / ${item.selectedSize}</span></div><div class="cart-item-price">${item.price}$</div><i class="fas fa-times cart-remove" onclick="cart.splice(${i},1);updateCartUI();"></i></div>`).join('');
             document.getElementById('cart-total').innerText = `$${cart.reduce((s, i) => s + i.price, 0).toFixed(2)}`;
         }
+
         function checkout() {
             if(!cart.length) return; let msg = "¡Hola ROM STORE! Mi pedido:\n\n";
             cart.forEach(i => msg += `- ${i.name} (${i.selectedColor} / ${i.selectedSize}): ${i.price}$\n`);
             window.open(`https://wa.me/584125019508?text=${encodeURIComponent(msg + `\n*TOTAL: $${cart.reduce((s,i)=>s+i.price,0).toFixed(2)}*`)}`);
         }
+        
+        // Scroll header effect
         window.addEventListener('scroll', () => document.getElementById('main-header').classList.toggle('scrolled', window.scrollY > 50));
-        renderFeatured();
     </script>
 </body>
 </html>
