@@ -215,7 +215,7 @@
             </div>
 
             <div class="logo-container">
-                <img src="romlogo.png" alt="ROMSTORE" class="logo-img" onclick="showView('view-home')">
+                <img src="romlogo.png" alt="ROMSTORE" class="logo-img" onclick="navigateToHome()">
             </div>
 
             <div class="nav-menu-container" id="nav-menu-container">
@@ -223,11 +223,11 @@
                     <i class="fas fa-times"></i>
                 </div>
                 <ul class="nav-menu">
-                    <li><a onclick="closeAndShow('view-home')">Inicio</a></li>
-                    <li><a onclick="closeAndRender('Damas')">Damas</a></li>
-                    <li><a onclick="closeAndRender('Caballeros')">Caballeros</a></li>
-                    <li><a onclick="closeAndRender('¡OFERTAS!')" style="color: var(--primary);">¡Ofertas!</a></li>
-                    <li><a href="#contacto" onclick="toggleMobileMenu()">Contacto</a></li>
+                    <li><a onclick="navigateToHome()">Inicio</a></li>
+                    <li><a onclick="navigateToCatalog('Damas')">Damas</a></li>
+                    <li><a onclick="navigateToCatalog('Caballeros')">Caballeros</a></li>
+                    <li><a onclick="navigateToCatalog('¡OFERTAS!')" style="color: var(--primary);">¡Ofertas!</a></li>
+                    <li><a onclick="navigateToContact()">Contacto</a></li>
                 </ul>
             </div>
 
@@ -242,10 +242,10 @@
 
     <main id="view-home" class="view-section">
         <section class="hero-slider">
-            <div class="slide active" onclick="showProduct(4)"><img src="https://i.ibb.co/KpFJfpRS/banner1-1-1.png"></div>
-            <div class="slide" onclick="showProduct(9)"><img src="https://i.ibb.co/pBhNmsnc/banner2-2-2.png"></div>
-            <div class="slide" onclick="showProduct(10)"><img src="https://i.ibb.co/mrPXpjLH/banner3-3-3.png"></div>
-            <div class="slide" onclick="showProduct(5)"><img src="https://i.ibb.co/4R0JFwY3/banner4-4-4.png"></div>
+            <div class="slide active" onclick="navigateToProduct(4)"><img src="https://i.ibb.co/KpFJfpRS/banner1-1-1.png"></div>
+            <div class="slide" onclick="navigateToProduct(9)"><img src="https://i.ibb.co/pBhNmsnc/banner2-2-2.png"></div>
+            <div class="slide" onclick="navigateToProduct(10)"><img src="https://i.ibb.co/mrPXpjLH/banner3-3-3.png"></div>
+            <div class="slide" onclick="navigateToProduct(5)"><img src="https://i.ibb.co/4R0JFwY3/banner4-4-4.png"></div>
             <button class="slider-arrow prev" onclick="event.stopPropagation(); moveSlide(-1)"><i class="fas fa-chevron-left"></i></button>
             <button class="slider-arrow next" onclick="event.stopPropagation(); moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
             <div class="slider-dots">
@@ -257,14 +257,14 @@
         </section>
 
         <section class="cat-section">
-            <div class="cat-card" onclick="renderCatalog('Damas')">
+            <div class="cat-card" onclick="navigateToCatalog('Damas')">
                 <img src="https://i.ibb.co/vKNyxPH/Whats-App-Image-2026-01-19-at-23-24-49.jpg">
                 <div class="cat-info">
                     <h2>DAMAS</h2>
                     <span class="cat-btn">Ver Colección</span>
                 </div>
             </div>
-            <div class="cat-card" onclick="renderCatalog('Caballeros')">
+            <div class="cat-card" onclick="navigateToCatalog('Caballeros')">
                 <img src="https://i.ibb.co/q3NvM5ch/Whats-App-Image-2026-01-19-at-21-47-19-2.jpg">
                 <div class="cat-info">
                     <h2>CABALLEROS</h2>
@@ -325,7 +325,7 @@
 
     <main id="view-catalog" class="view-section">
         <div class="catalog-container">
-            <div class="back-nav" onclick="showView('view-home')"><i class="fas fa-arrow-left"></i> INICIO</div>
+            <div class="back-nav" onclick="navigateToHome()"><i class="fas fa-arrow-left"></i> INICIO</div>
             <h2 id="catalog-title" style="font-family: var(--syne); font-size: 1.8rem; margin-bottom: 30px; text-transform: uppercase;"></h2>
             <div class="catalog-grid" id="catalog-grid"></div>
         </div>
@@ -364,7 +364,7 @@
     </div>
 
     <script>
-        // --- DATOS DEL PRODUCTO (Sin cambios) ---
+        // --- DATA ---
         const products = [
             { id: 6, name: "Franela Nike Dri-fit", price: 15.99, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/NdL7ktJf/Whats-App-Image-2026-01-21-at-02-52-17.jpg", "https://i.ibb.co/cM7Yx4d/Whats-App-Image-2026-01-21-at-02-52-17-3.jpg", "https://i.ibb.co/S4D9NmHn/Whats-App-Image-2026-01-21-at-02-52-17-1.jpg", "https://i.ibb.co/pj2P74r2/Whats-App-Image-2026-01-21-at-02-52-17-4.jpg"], stock: { "Negro": ["M", "L"], "Gris": ["M", "L"], "Vinotinto": ["M", "L"] } },
             { id: 1, name: "Short Nike con licra V1", price: 20, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/B2M1yqG9/Whats-App-Image-2026-01-21-at-01-16-51.jpg", "https://i.ibb.co/67LdJpp4/Whats-App-Image-2026-01-21-at-00-18-52.jpg", "https://i.ibb.co/4Z8BxT4d/Whats-App-Image-2026-01-21-at-00-18-52-1.jpg"], stock: { "Azul": ["XL", "L"], "Gris": ["S"] } },
@@ -388,82 +388,153 @@
         let currentProduct = null;
         let currentImgIdx = 0;
 
-        // --- GESTIÓN DE ESTADO (HISTORY API) ---
-        
-        // Configurar estado inicial al cargar
-        window.addEventListener('load', () => {
-            // Reemplaza el estado actual para que no sea null
-            history.replaceState({ view: 'view-home' }, '', window.location.pathname);
-            renderFeatured(); // Carga productos iniciales
-        });
+        // --- HELPER: URL SLUGS ---
+        function toSlug(text) {
+            return text.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        }
 
-        // Escuchar el botón "Atrás" del navegador
-        window.addEventListener('popstate', (event) => {
-            const state = event.state;
+        // --- ROUTING SYSTEM ---
+        window.addEventListener('load', handleRoute);
+        window.addEventListener('popstate', handleRoute);
+
+        function handleRoute() {
+            const hash = window.location.hash;
             
-            // 1. Cerrar Modales si no están en el estado actual
-            const cartSidebar = document.getElementById('cart-sidebar');
-            const menuContainer = document.getElementById('nav-menu-container');
+            // 1. Cerrar Modales por defecto (se abrirán si el hash coincide)
+            document.getElementById('cart-sidebar').classList.remove('active');
+            document.getElementById('nav-menu-container').classList.remove('active');
 
-            if (state && state.modal === 'cart') {
-                cartSidebar.classList.add('active');
-            } else {
-                cartSidebar.classList.remove('active');
+            // 2. Gestionar Vistas
+            if (hash === '' || hash === '#') {
+                showSection('view-home');
+                return;
             }
 
-            if (state && state.modal === 'menu') {
-                menuContainer.classList.add('active');
-            } else {
-                menuContainer.classList.remove('active');
+            if (hash === '#cart') {
+                document.getElementById('cart-sidebar').classList.add('active');
+                // Mantenemos la vista que estaba debajo (generalmente home o donde estaba el usuario)
+                // Si queremos asegurar que haya fondo, mostramos home si no hay nada visible
+                if (!isAnySectionVisible()) showSection('view-home');
+                return;
             }
 
-            // 2. Gestionar Navegación entre Vistas
-            if (state && state.view) {
-                // Si el estado tiene parámetros específicos (como ID de producto o categoría)
-                if (state.view === 'view-product' && state.productId) {
-                    loadProductView(state.productId); // Carga la data sin hacer pushState
-                } else if (state.view === 'view-catalog' && state.category) {
-                    loadCatalogView(state.category); // Carga la data sin hacer pushState
+            if (hash === '#menu') {
+                document.getElementById('nav-menu-container').classList.add('active');
+                if (!isAnySectionVisible()) showSection('view-home');
+                return;
+            }
+
+            if (hash === '#contacto') {
+                // Ir a contacto es un scroll, cerramos menú si está abierto y mostramos home
+                showSection('view-home');
+                setTimeout(() => {
+                    const footer = document.getElementById('contacto');
+                    if (footer) footer.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+                return;
+            }
+
+            // Rutas de Catálogo: #categoria/damas
+            if (hash.startsWith('#categoria/')) {
+                const catSlug = hash.split('/')[1];
+                // Buscar categoría original basada en el slug (simple map o find)
+                const categories = ["Damas", "Caballeros", "¡OFERTAS!"];
+                const category = categories.find(c => toSlug(c) === catSlug);
+                if (category) {
+                    loadCatalogView(category);
                 } else {
-                    // Vista simple (home)
-                    document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
-                    document.getElementById(state.view).style.display = 'block';
-                    window.scrollTo(0,0);
+                    showSection('view-home'); // Fallback
                 }
-            } else {
-                // Fallback por si el estado es null
-                document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
-                document.getElementById('view-home').style.display = 'block';
+                return;
             }
-        });
 
-        // --- FUNCIONES DE NAVEGACIÓN Y RENDERIZADO ---
+            // Rutas de Producto: #producto/nombre-del-item
+            if (hash.startsWith('#producto/')) {
+                const prodSlug = hash.split('/')[1];
+                const product = products.find(p => toSlug(p.name) === prodSlug);
+                if (product) {
+                    loadProductView(product.id);
+                } else {
+                    showSection('view-home'); // Fallback
+                }
+                return;
+            }
 
-        // Función auxiliar para mostrar vistas sin agregar al historial (Uso interno del popstate)
-        function setViewVisible(viewId) {
+            // Fallback general
+            showSection('view-home');
+        }
+
+        function isAnySectionVisible() {
+            return Array.from(document.querySelectorAll('.view-section')).some(s => s.style.display === 'block');
+        }
+
+        function showSection(id) {
             document.querySelectorAll('.view-section').forEach(v => v.style.display = 'none');
-            document.getElementById(viewId).style.display = 'block';
-            window.scrollTo(0,0);
+            const section = document.getElementById(id);
+            if(section) section.style.display = 'block';
+            window.scrollTo(0, 0);
         }
 
-        // Navegación Principal (Agrega al historial)
-        function showView(viewId) {
-            history.pushState({ view: viewId }, '', '#'+viewId.replace('view-', ''));
-            setViewVisible(viewId);
+        // --- NAVIGATION TRIGGERS (Interacciones del Usuario) ---
+
+        function navigateToHome() {
+            // Limpiamos el hash para ir a Home
+            history.pushState(null, '', window.location.pathname);
+            handleRoute();
         }
 
-        // Renderizar Catálogo
-        function renderCatalog(cat) {
-            history.pushState({ view: 'view-catalog', category: cat }, '', '#catalog');
-            loadCatalogView(cat);
+        function navigateToCatalog(cat) {
+            history.pushState(null, '', `#categoria/${toSlug(cat)}`);
+            handleRoute();
         }
+
+        function navigateToProduct(id) {
+            const product = products.find(p => p.id === id);
+            if(product) {
+                history.pushState(null, '', `#producto/${toSlug(product.name)}`);
+                handleRoute();
+            }
+        }
+
+        function navigateToContact() {
+            history.pushState(null, '', '#contacto');
+            handleRoute();
+        }
+
+        function toggleCart() {
+            const sidebar = document.getElementById('cart-sidebar');
+            const isActive = sidebar.classList.contains('active');
+            
+            if (!isActive) {
+                // Abrir: Añadimos estado
+                history.pushState(null, '', '#cart');
+                handleRoute();
+            } else {
+                // Cerrar: Volvemos atrás en el historial (quitando #cart)
+                history.back();
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('nav-menu-container');
+            const isActive = menu.classList.contains('active');
+
+            if (!isActive) {
+                history.pushState(null, '', '#menu');
+                handleRoute();
+            } else {
+                history.back();
+            }
+        }
+
+        // --- CORE VIEWS LOGIC ---
 
         function loadCatalogView(cat) {
             const grid = document.getElementById('catalog-grid');
             document.getElementById('catalog-title').innerText = cat;
             const filtered = (cat === '¡OFERTAS!') ? products.filter(p => p.onSale) : products.filter(p => p.category.includes(cat));
             grid.innerHTML = filtered.map(p => `
-                <div class="product-card" onclick="showProduct(${p.id})">
+                <div class="product-card" onclick="navigateToProduct(${p.id})">
                     ${p.outOfStock ? '<div class="badge-sale" style="background:#555; border-color:#555;">AGOTADO</div>' : (p.onSale ? '<div class="badge-sale">SALE</div>' : '')}
                     <img src="${p.images[0]}" style="${p.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
                     <div class="product-card-info">
@@ -474,13 +545,7 @@
                         </div>
                     </div>
                 </div>`).join('');
-            setViewVisible('view-catalog');
-        }
-
-        // Mostrar Producto
-        function showProduct(id) {
-            history.pushState({ view: 'view-product', productId: id }, '', '#product');
-            loadProductView(id);
+            showSection('view-catalog');
         }
 
         function loadProductView(id) {
@@ -507,58 +572,16 @@
                     </div>
                     <button class="buy-btn" onclick="addToCart()" ${currentProduct.outOfStock ? 'disabled style="background:#333; cursor:not-allowed;"' : ''}>${currentProduct.outOfStock ? 'AGOTADO' : 'Añadir a la bolsa'}</button>
                 </div>`;
-            setViewVisible('view-product');
+            showSection('view-product');
         }
 
-        // --- FUNCIONES MÓVILES Y CARRITO (CON HISTORIAL) ---
-
-        function toggleMobileMenu() {
-            const menu = document.getElementById('nav-menu-container');
-            const isActive = menu.classList.contains('active');
-            
-            if (!isActive) {
-                // Abrir menú y guardar en historial
-                history.pushState({ modal: 'menu' }, '', '#menu');
-                menu.classList.add('active');
-            } else {
-                // Cerrar menú: Si fue abierto por historial, retrocedemos
-                // Si el usuario lo cierra manualmente, retrocedemos el historial para quitar el estado 'menu'
-                history.back();
-            }
-        }
-
-        function toggleCart() {
-            const sidebar = document.getElementById('cart-sidebar');
-            const isActive = sidebar.classList.contains('active');
-
-            if (!isActive) {
-                // Abrir carrito y guardar en historial
-                history.pushState({ modal: 'cart' }, '', '#cart');
-                sidebar.classList.add('active');
-            } else {
-                // Cerrar carrito manualmente (trigger de back para mantener consistencia)
-                history.back(); 
-            }
-        }
-
-        // Funciones auxiliares para el menú (adaptadas para cerrar correctamente)
-        function closeAndShow(viewId) {
-            // Si el menú está abierto, history.back() lo cerrará via popstate
-            // Luego necesitamos navegar a la vista
-            history.back(); // Cierra menú
-            setTimeout(() => showView(viewId), 50); // Navega (pequeño delay para permitir cierre UI)
-        }
-
-        function closeAndRender(cat) {
-            history.back(); // Cierra menú
-            setTimeout(() => renderCatalog(cat), 50); // Navega
-        }
-
-        // --- LÓGICA DE PRODUCTO Y SLIDER (Original) ---
-        
+        // --- SLIDER LOGIC ---
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const dots = document.querySelectorAll('.dot');
+        
+        // Iniciar slider
+        renderFeatured();
         setInterval(() => moveSlide(1), 5000);
 
         function moveSlide(step) {
@@ -576,7 +599,7 @@
             const featuredIds = [1, 6, 7, 4];
             const grid = document.getElementById('featured-grid');
             grid.innerHTML = products.filter(p => featuredIds.includes(p.id)).map(p => `
-                <div class="product-card" onclick="showProduct(${p.id})">
+                <div class="product-card" onclick="navigateToProduct(${p.id})">
                     ${p.outOfStock ? '<div class="badge-sale" style="background:#555; border-color:#555;">AGOTADO</div>' : (p.onSale ? '<div class="badge-sale">SALE</div>' : '')}
                     <img src="${p.images[0]}" style="${p.outOfStock ? 'filter:grayscale(100%); opacity:0.6;' : ''}">
                     <div class="product-card-info">
@@ -589,7 +612,7 @@
                 </div>`).join('');
         }
 
-        // Utilidades de Producto (Imágenes, Tallas, Compra)
+        // --- PRODUCT UTILS ---
         function setImg(i) { currentImgIdx = i; document.getElementById('main-img').src = currentProduct.images[i]; document.querySelectorAll('.thumb').forEach((t, idx) => t.classList.toggle('active', idx === i)); }
         function changeImgStep(s) { currentImgIdx = (currentImgIdx + s + currentProduct.images.length) % currentProduct.images.length; setImg(currentImgIdx); }
         function updateSizes() { const color = document.getElementById('p-colors').value; const sizes = currentProduct.stock[color] || []; const sSelect = document.getElementById('p-sizes'); sSelect.innerHTML = sizes.length === 1 ? `<option value="${sizes[0]}">${sizes[0]}</option>` : '<option value="" disabled selected>Elegir talla</option>' + sizes.map(s => `<option value="${s}">${s}</option>`).join(''); }
@@ -600,8 +623,10 @@
             if(!color || !size) return alert("Selecciona color y talla");
             cart.push({ ...currentProduct, selectedColor: color, selectedSize: size }); 
             updateCartUI(); 
-            // Abrir carrito usando la nueva lógica (pushState)
-            toggleCart();
+            // Abrir carrito usando la nueva lógica (Router)
+            if(!document.getElementById('cart-sidebar').classList.contains('active')) {
+                toggleCart(); 
+            }
         }
 
         function updateCartUI() {
@@ -616,7 +641,6 @@
             window.open(`https://wa.me/584125019508?text=${encodeURIComponent(msg + `\n*TOTAL: $${cart.reduce((s,i)=>s+i.price,0).toFixed(2)}*`)}`);
         }
         
-        // Scroll header effect
         window.addEventListener('scroll', () => document.getElementById('main-header').classList.toggle('scrolled', window.scrollY > 50));
     </script>
 </body>
