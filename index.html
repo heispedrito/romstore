@@ -194,7 +194,8 @@
             .nav-menu { flex-direction: column; gap: 25px; }
             .nav-menu a { font-size: 1.2rem; }
 
-            .hero-slider { height: 100vh; } /* Altura ajustada para móvil */
+            .hero-slider { height: 100vh; touch-action: pan-y; } /* El touch-action permite scroll vertical pero captura el horizontal */
+.slide picture, .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
             .cat-section { grid-template-columns: 1fr; padding: 20px; }
             .cat-card { height: 350px; }
             .cart-sidebar { width: 100%; } 
@@ -244,7 +245,7 @@
         <section class="hero-slider">
             <div class="slide active" onclick="navigateToProduct(6)">
     <picture>
-        <source srcset="https://i.ibb.co/Ngq9vg5Y/BANNER-MINIMALISTA-FRANELA-NIKE-MOVIL.png" media="(max-width: 768px)">
+        <source srcset="https://i.ibb.co/wh2yXvXH/BANNER-MINIMALISTA-FRANELA-NIKE-MOVIL.png" media="(max-width: 768px)">
         <img src="https://i.ibb.co/fdLnZwvx/BANNER-MINIMALISTA-FRANELA-NIKE.png" alt="Nike Banner">
     </picture>
 </div>
@@ -258,7 +259,7 @@
 
 <div class="slide" onclick="navigateToProduct(5)">
     <picture>
-        <source srcset="https://i.ibb.co/KxBxNZ3J/BANNER-MINIMALISTA-BOXERS-CK-MOVIL.png" media="(max-width: 768px)">
+        <source srcset="https://i.ibb.co/ccS5KpTD/BANNER-MINIMALISTA-BOXERS-CK-MOVIL.png" media="(max-width: 768px)">
         <img src="https://i.ibb.co/JwK7jn0S/BANNER-MINIMALISTA-BOXERS-CK.png" alt="CK Banner">
     </picture>
 </div>
@@ -404,6 +405,32 @@
         let cart = [];
         let currentProduct = null;
         let currentImgIdx = 0;
+        // --- LÓGICA DE SWIPE PARA MÓVIL ---
+let touchStartX = 0;
+let touchEndX = 0;
+
+const sliderContainer = document.querySelector('.hero-slider');
+
+sliderContainer.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+}, {passive: true});
+
+sliderContainer.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, {passive: true});
+
+function handleSwipe() {
+    const swipeThreshold = 50; // Distancia mínima para detectar el deslizamiento
+    if (touchStartX - touchEndX > swipeThreshold) {
+        // Deslizó a la izquierda -> Siguiente slide
+        moveSlide(1);
+    }
+    if (touchEndX - touchStartX > swipeThreshold) {
+        // Deslizó a la derecha -> Slide anterior
+        moveSlide(-1);
+    }
+}
 
         // --- HELPER: URL SLUGS ---
         function toSlug(text) {
