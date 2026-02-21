@@ -72,7 +72,6 @@
         .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: var(--text); justify-self: start; }
 
         .logo-container { justify-self: center; }
-        .logo-img { height: 35px; width: auto; cursor: pointer; display: block; filter: none; /* Asumiendo que tu logo original es blanco, esto lo hace negro. Quitar si ya es negro */ }
         .logo { font-size: 1.8rem; text-decoration: none; color: var(--text); cursor: pointer; font-weight: 700; letter-spacing: -1px; }
 
         .nav-menu-container { justify-self: start; }
@@ -236,23 +235,22 @@
     }
 
     /* 3. GRID MÁS ANCHO Y MENOS FLACO */
-    /* Reducimos el espacio a los lados de la pantalla para ganar anchura */
     .cat-section, .featured-section, .catalog-container {
         padding: 15px 10px !important; 
     }
     
     .catalog-grid {
         grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important; /* Menos espacio en el medio = fotos más anchas */
+        gap: 8px !important; 
+        padding: 30px 20px; /* Fusionado del código anterior */
     }
     
     .product-card img {
         width: 100% !important;
         height: auto !important;
-        /* Proporción casi cuadrada (1 de ancho x 1.1 de alto). 
-           Esto quita lo "flaco" y las hace ver amplias y llenas */
         aspect-ratio: 1 / 1.1 !important; 
-        object-fit: cover !important;}
+        object-fit: cover !important;
+    }
     } 
     </style>
 </head>
@@ -630,23 +628,6 @@
                     <button class="buy-btn" onclick="addToCart()" ${currentProduct.outOfStock ? 'disabled' : ''}>${currentProduct.outOfStock ? 'AGOTADO' : 'Añadir a la bolsa'}</button>
                 </div>`;
             showSection('view-product');
-
-            let touchProductStartX = 0;
-            let touchProductEndX = 0;
-
-            document.addEventListener('touchstart', e => {
-                if (e.target.closest('.gallery-wrapper')) {
-                    touchProductStartX = e.changedTouches[0].screenX;
-                }
-            }, {passive: true});
-
-            document.addEventListener('touchend', e => {
-                if (e.target.closest('.gallery-wrapper')) {
-                    touchProductEndX = e.changedTouches[0].screenX;
-                    if (touchProductStartX - touchProductEndX > 50) changeImgStep(1);
-                    if (touchProductEndX - touchProductStartX > 50) changeImgStep(-1);
-                }
-            }, {passive: true});
         }
 
         // --- SLIDER LOGIC ---
@@ -734,6 +715,21 @@
     const whatsappUrl = `https://wa.me/584125019508?text=${encodeURIComponent(msg)}`;
     window.open(whatsappUrl, '_blank');
 }
-    </script>
+    let touchProductStartX = 0;
+            let touchProductEndX = 0;
+
+            document.addEventListener('touchstart', e => {
+                if (e.target.closest('.gallery-wrapper')) {
+                    touchProductStartX = e.changedTouches[0].screenX;
+                }
+            }, {passive: true});
+
+            document.addEventListener('touchend', e => {
+                if (e.target.closest('.gallery-wrapper')) {
+                    touchProductEndX = e.changedTouches[0].screenX;
+                    if (touchProductStartX - touchProductEndX > 50) changeImgStep(1);
+                    if (touchProductEndX - touchProductStartX > 50) changeImgStep(-1);
+                }
+            }, {passive: true});</script>
 </body>
 </html>
