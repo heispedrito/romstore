@@ -218,7 +218,6 @@
             .nav-menu { flex-direction: column; gap: 25px; }
             .nav-menu a { font-size: 1.2rem; color: var(--text); }
 
-            .hero-slider { height: calc(100vh - 60px); }
             .cat-section { grid-template-columns: 1fr; padding: 40px 20px; }
             .cat-card { height: 450px; }
             .cart-sidebar { width: 100%; } 
@@ -229,10 +228,11 @@
             .product-card img { height: 250px; }
             .product-card-info h3 { font-size: 0.75rem; }
             .price-new { font-size: 0.9rem; }
-      /* 2. ALTO DEL BANNER PRINCIPAL */
+     /* ALTO DEL BANNER PRINCIPAL (Corregido para navegadores móviles) */
     .hero-slider {
-        /* 'vh' significa Viewport Height. 65vh es el 65% del alto de la pantalla */
-        height: 65vh !important; 
+        /* 'svh' (Small Viewport Height) ignora la barra de direcciones y evita brincos */
+        height: 70svh !important; 
+        min-height: 500px; /* Asegura que nunca se vea muy aplastado en pantallas enanas */
     }
 
     /* 3. GRID MÁS ANCHO Y MENOS FLACO */
@@ -298,20 +298,14 @@
         <section class="hero-slider">
             <div class="slide active" onclick="navigateToProduct(6)">
                 <picture>
-                    <source srcset="https://i.ibb.co/G3TZwGyp/nike-dri-fit-movil-2.png" media="(max-width: 768px)">
+                    <source srcset="https://i.ibb.co/PstC6237/nike-dri-fit-2.png" media="(max-width: 768px)">
                     <img src="https://i.ibb.co/fdLnZwvx/BANNER-MINIMALISTA-FRANELA-NIKE.png" alt="Nike Banner">
                 </picture>
             </div>
             <div class="slide" onclick="navigateToProduct(10)">
                 <picture>
-                    <source srcset="https://i.ibb.co/zTYCvSKL/short-gymshar-movil-2.png" media="(max-width: 768px)">
+                    <source srcset="https://i.ibb.co/PGNW8JJW/gymshark-2.png" media="(max-width: 768px)">
                     <img src="https://i.ibb.co/wNkcGXbF/BANNER-MINIMALISTA-SHORT-GYMSHARK.png" alt="Gymshark Banner">
-                </picture>
-            </div>
-            <div class="slide" onclick="navigateToProduct(5)">
-                <picture>
-                    <source srcset="https://i.ibb.co/GvdhtRBh/boxers-calvin-klein-movil-2.png" media="(max-width: 768px)">
-                    <img src="https://i.ibb.co/JwK7jn0S/BANNER-MINIMALISTA-BOXERS-CK.png" alt="CK Banner">
                 </picture>
             </div>
             
@@ -321,7 +315,6 @@
             <div class="slider-dots">
                 <div class="dot active" onclick="event.stopPropagation(); goToSlide(0)"></div>
                 <div class="dot" onclick="event.stopPropagation(); goToSlide(1)"></div>
-                <div class="dot" onclick="event.stopPropagation(); goToSlide(2)"></div>
             </div>
         </section>
 
