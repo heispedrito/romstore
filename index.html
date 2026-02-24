@@ -408,7 +408,7 @@
     <script>
         // --- DATA (INVARIABLE) ---
         const products = [
-            { id: 6, name: "Franela Nike Dri-fit", price: 16, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/NdL7ktJf/Whats-App-Image-2026-01-21-at-02-52-17.jpg", "https://i.ibb.co/cM7Yx4d/Whats-App-Image-2026-01-21-at-02-52-17-3.jpg", "https://i.ibb.co/pvYsvcS2/Whats-App-Image-2026-01-21-at-02-52-17-2.jpg", "https://i.ibb.co/S4D9NmHn/Whats-App-Image-2026-01-21-at-02-52-17-1.jpg", "https://i.ibb.co/pj2P74r2/Whats-App-Image-2026-01-21-at-02-52-17-4.jpg"], stock: { "Negro": ["M", "L"], "Blanco": ["L"], "Gris": ["M", "L"], "Vinotinto": ["M", "L"] } },
+            { id: 6, name: "Franela Nike Dri-fit", price: 16, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/NdL7ktJf/Whats-App-Image-2026-01-21-at-02-52-17.jpg", "https://i.ibb.co/cM7Yx4d/Whats-App-Image-2026-01-21-at-02-52-17-3.jpg", "https://i.ibb.co/pvYsvcS2/Whats-App-Image-2026-01-21-at-02-52-17-2.jpg", "https://i.ibb.co/S4D9NmHn/Whats-App-Image-2026-01-21-at-02-52-17-1.jpg", "https://i.ibb.co/pj2P74r2/Whats-App-Image-2026-01-21-at-02-52-17-4.jpg"], stock: { "Negro": ["M", "L"], "Blanco": ["L"], "Gris": ["M", "L"], "Vinotinto": ["L"] } },
             { id: 1, name: "Short Nike Con Licra V1", price: 20, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/B2M1yqG9/Whats-App-Image-2026-01-21-at-01-16-51.jpg", "https://i.ibb.co/67LdJpp4/Whats-App-Image-2026-01-21-at-00-18-52.jpg", "https://i.ibb.co/4Z8BxT4d/Whats-App-Image-2026-01-21-at-00-18-52-1.jpg"], stock: { "Azul": ["XL", "L"], "Gris": ["S"] } },
             { id: 2, name: "Short Nike Con Licra V2", price: 20, category: ["Caballeros"], onSale: false, images: ["https://i.ibb.co/BFnDJM7/Whats-App-Image-2026-01-15-at-18-22-44-1.jpg", "https://i.ibb.co/q3NvM5ch/Whats-App-Image-2026-01-19-at-21-47-19-2.jpg"], stock: { "Gris": ["L", "XL"] } },
             { id: 5, name: "Boxer Calvin Klein", price: 3.99, oldPrice: 6, category: ["Caballeros"], onSale: true, images: ["https://i.ibb.co/mVJwWHMD/Whats-App-Image-2026-01-15-at-18-22-43-1.jpg", "https://i.ibb.co/VYJgckNP/Whats-App-Image-2026-01-21-at-01-51-48.jpg"], stock: { "Gris": ["XL"] } },
@@ -702,27 +702,25 @@
         function checkout() {
     if(!cart.length) return; 
     
-    // Encabezado sobrio
-    let msg = "*PEDIDO - ROM STORE*\n";
-    msg += "__________________________\n\n";
-    msg += "Detalles de la orden:\n\n";
+    // Encabezado con negrita para impacto inmediato
+    let msg = "*ORDEN DE COMPRA | ROM STORE*\n";
+    msg += "━━━━━━━━━━━━━━━━━━\n\n";
 
-    // Lista de productos sin emojis
+    // Cuerpo del mensaje más limpio
     cart.forEach((item, index) => {
-        msg += `${index + 1}. ${item.name.toUpperCase()}\n`;
-        msg += `   Color: ${item.selectedColor}\n`;
-        msg += `   Talla: ${item.selectedSize}\n`;
-        msg += `   Precio: $${item.price}\n\n`;
+        msg += `*${index + 1}. ${item.name.toUpperCase()}*\n`; // Nombre en negrita
+        msg += `- Color: ${item.selectedColor}\n`;
+        msg += `- Talla: ${item.selectedSize}\n`;
+        msg += `- Precio: $${item.price.toFixed(2)}\n\n`;
     });
 
-    // Total y cierre
     const total = cart.reduce((s, i) => s + i.price, 0).toFixed(2);
     
-    msg += "__________________________\n";
-    msg += `TOTAL: $${total}\n\n`;
-    msg += "Deseo recibir información para concretar el pago.";
+    // Cierre estructurado
+    msg += "━━━━━━━━━━━━━━━━━━\n";
+    msg += `*MONTO TOTAL: $${total}*\n\n`;
+    msg += "_Solicito información de pago para finalizar mi pedido._";
 
-    // Apertura de WhatsApp
     const whatsappUrl = `https://wa.me/584125019508?text=${encodeURIComponent(msg)}`;
     window.open(whatsappUrl, '_blank');
 }
