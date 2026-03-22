@@ -1,8 +1,12 @@
 // app.js - Motor Lógico de ROM STORE (Versión Premium Final)
 
-// --- 1. ESTADO GLOBAL ---
-let cart = [];
+// --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
+let cart = JSON.parse(localStorage.getItem('rom_cart')) || [];
 const wppNumber = "584125019508"; 
+
+function saveCart() {
+    localStorage.setItem('rom_cart', JSON.stringify(cart));
+}
 
 // Variables para la galería interactiva
 window.currentImageIndex = 0;
@@ -34,11 +38,11 @@ const searchResults = document.getElementById('search-results');
 function generateSlug(text) {
     return text.toString().toLowerCase()
         .trim()
-        .normalize("NFD")                   // Remueve acentos
-        .replace(/[\u0300-\u036f]/g, "")    // Limpia caracteres especiales
-        .replace(/\s+/g, '-')               // Cambia espacios por guiones
-        .replace(/[^\w\-]+/g, '')           // Remueve todo lo que no sea palabra o guión
-        .replace(/\-\-+/g, '-');            // Evita guiones dobles
+        .normalize("NFD")                   
+        .replace(/[\u0300-\u036f]/g, "")    
+        .replace(/\s+/g, '-')               
+        .replace(/[^\w\-]+/g, '')           
+        .replace(/\-\-+/g, '-');            
 }
 
 // --- 3. GESTIÓN DE INTERFACES (UI) ---
@@ -93,7 +97,6 @@ function navigateTo(url) {
     handleRoute();
 }
 
-// Interceptar clics en enlaces internos
 document.body.addEventListener('click', e => {
     if (e.target.matches('[data-route], [data-route] *')) {
         e.preventDefault();
@@ -118,12 +121,15 @@ function handleRoute() {
         const catSlug = path.split('/')[2];
         renderCategory(catSlug);
     } else if (path.startsWith('/producto/')) {
-        const prodSlug = path.split('/')[2]; // Ahora lee el nombre de la URL
+        const prodSlug = path.split('/')[2]; 
         renderProduct(prodSlug);
+    } else if (path === '/checkout/gracias') {
+        renderThankYou();
     } else if (path.startsWith('/politica/')) {
         const policySlug = path.split('/')[2];
         renderPolicy(policySlug);
     } else {
+        // Redirección 404 global al inicio
         renderHome();
     }
     
@@ -133,6 +139,7 @@ function handleRoute() {
 window.addEventListener('DOMContentLoaded', () => {
     handleRoute();
     initAccordions(); 
+    updateCartBadge(); 
 });
 
 // --- 5. RENDERIZADO DE VISTAS ---
@@ -207,6 +214,7 @@ function renderCategory(slug) {
     else if (slug === "mujer") { catName = "Colección Mujer"; filtered = visibleProducts.filter(p => p.category.includes("Damas")); }
     else if (slug === "hombre") { catName = "Colección Hombre"; filtered = visibleProducts.filter(p => p.category.includes("Caballeros")); }
     else if (slug === "ofertas") { catName = "Sale / Archivo"; filtered = visibleProducts.filter(p => p.onSale); }
+    else { return renderHome(); } // Redirección 404 de categorías
 
     document.title = `${catName} | Rom Store`;
 
@@ -220,15 +228,113 @@ function renderCategory(slug) {
     `;
 }
 
+// --- VISTAS LEGALES Y DE SOPORTE (POLÍTICAS) ---
 function renderPolicy(slug) {
     let title = "";
-    if (slug === "envios") title = "Envíos y Entregas";
-    else if (slug === "devoluciones") title = "Cambios y Devoluciones";
-    else if (slug === "terminos") title = "Términos de Servicio";
-    else if (slug === "privacidad") title = "Políticas de Privacidad";
-    else if (slug === "faq") title = "Preguntas Frecuentes";
-    else if (slug === "tallas") title = "Guía de Tallas";
-    else title = "Información Legal";
+    let content = "";
+
+    if (slug === "envios") {
+        title = "Envíos y Entregas";
+        content = `
+            <h3>1. Entregas Personales y Delivery</h3>
+            <p>Realizamos entregas personales en <strong>Barcelona, Edo. Anzoátegui (Urb. Cortijo de Oriente)</strong> sin costo adicional, previo acuerdo de horario. También contamos con servicio de Delivery a zonas céntricas y aledañas con un costo extra, el cual será calculado dependiendo de tu ubicación exacta al momento de procesar tu orden.</p>
+            
+            <h3>2. Envíos Nacionales</h3>
+            <p>Llegamos a toda Venezuela a través de las agencias <strong>MRW y Zoom</strong>. Todos los envíos nacionales se despachan bajo la modalidad de <strong>Cobro en Destino (COD)</strong>. Esto significa que el cliente es responsable de cancelar el costo del flete directamente a la agencia al momento de retirar su paquete.</p>
+            
+            <h3>3. Tiempos de Procesamiento y Despacho</h3>
+            <p>Entendemos que quieres lucir tus prendas lo antes posible. Una vez que envíes tu comprobante y el pago sea verificado por nuestro equipo, tu pedido será empaquetado y despachado el día hábil siguiente. Los tiempos de tránsito estimados dependen exclusivamente de la logística de la agencia de encomiendas (generalmente demoran entre 2 a 4 días hábiles).</p>
+        `;
+    } else if (slug === "devoluciones") {
+        title = "Cambios y Devoluciones";
+        content = `
+            <h3>1. Condiciones para Cambios</h3>
+            <p>En ROM STORE garantizamos la calidad de nuestras prendas. Si necesitas un cambio de talla, aceptamos solicitudes dentro de los <strong>7 días continuos</strong> tras haber recibido tu pedido. Las prendas deben estar en su estado original e impecable: sin signos de uso, sin lavar, sin olores a perfume o detergente, sin manchas y con todas sus etiquetas originales adheridas.</p>
+            
+            <h3>2. Artículos No Retornables</h3>
+            <p>Por razones estrictas de higiene y salud pública, <strong>no aceptamos cambios ni devoluciones en Ropa Interior (Ej: Boxers Calvin Klein) ni Medias</strong>. Asimismo, todos los artículos adquiridos en la sección de "Sale / Ofertas" o con descuentos aplicados son considerados ventas finales y no admiten cambio.</p>
+            
+            <h3>3. Costos de Envío por Cambio</h3>
+            <p>Para gestionar un cambio, debes comunicarte con nuestro equipo vía WhatsApp. Los costos de envío (ida y vuelta) generados por cambios de talla o color corren por cuenta y responsabilidad del cliente. ROM STORE únicamente asumirá los costos de envío si el producto enviado presenta un defecto de fábrica comprobado al momento de su apertura.</p>
+            
+            <h3>4. Política de Reembolsos</h3>
+            <p><strong>No realizamos devoluciones de dinero</strong> bajo ninguna circunstancia. Si tu cambio es aprobado, procesaremos la sustitución por otra talla, otro color, o por otro artículo de la tienda que tenga el mismo valor (o puedes pagar la diferencia si eliges un producto de mayor valor).</p>
+        `;
+    } else if (slug === "terminos") {
+        title = "Términos de Servicio";
+        content = `
+            <h3>1. Aceptación de los Términos</h3>
+            <p>Al acceder, navegar y utilizar la plataforma de ROM STORE, aceptas estar sujeto a estos términos y condiciones. Nos reservamos el derecho de modificar, actualizar o cambiar cualquier parte de nuestras políticas en cualquier momento, siendo tu responsabilidad revisarlas periódicamente.</p>
+            
+            <h3>2. Precios, Pagos y Disponibilidad</h3>
+            <p>Todos los precios publicados están sujetos a cambios sin previo aviso. Nuestro inventario es dinámico y de alta rotación; en el caso excepcional de que un producto se agote tras haber generado tu orden, nuestro equipo te contactará de inmediato para ofrecerte una alternativa premium o la devolución íntegra de tu pago.</p>
+            
+            <h3>3. Exactitud de Colores y Diseños</h3>
+            <p>Hacemos el mayor esfuerzo para mostrar los colores y detalles de nuestras prendas con la mayor precisión fotográfica posible. Sin embargo, debido a las diferencias de calibración en pantallas, monitores y dispositivos móviles, no podemos garantizar que el color visualizado sea 100% idéntico a la prenda física.</p>
+            
+            <h3>4. Prevención de Fraudes y Canales Oficiales</h3>
+            <p>Para garantizar tu seguridad y evitar estafas, te recordamos que nuestro <strong>ÚNICO</strong> número oficial de atención y ventas vía WhatsApp es el <strong style="color: var(--color-success); font-size: 1.1rem;">+58 412-5019508</strong>. Nuestras únicas redes sociales oficiales son Instagram (<strong><a href="https://instagram.com/rom.vzla" target="_blank">@rom.vzla</a></strong>) y TikTok (<strong><a href="https://tiktok.com/@paty.rengel" target="_blank">@paty.rengel</a></strong>).</p>
+            <p style="color: var(--color-danger); font-weight: 600; margin-top: 10px; padding: 10px; border-left: 3px solid var(--color-danger); background: #fff5f5;">ROM STORE no se hace responsable por compras, transferencias de dinero o acuerdos realizados a través de números de teléfono, perfiles falsos o intermediarios no autorizados. ¡Verifica siempre nuestros canales antes de pagar!</p>
+        `;
+    } else if (slug === "privacidad") {
+        title = "Políticas de Privacidad";
+        content = `
+            <h3>1. Recopilación de Datos y Propósito</h3>
+            <p>En ROM STORE valoramos y respetamos tu privacidad al máximo. Solo recopilamos la información estrictamente necesaria para procesar, despachar y dar seguimiento a tu orden (nombre completo, número de teléfono, dirección de envío o agencia y comprobantes de pago).</p>
+            
+            <h3>2. Protección de la Información</h3>
+            <p>Tus datos personales son utilizados de manera exclusiva para la logística de tu compra, para contactarte en caso de alguna eventualidad con tu pedido y para brindarte soporte personalizado. <strong>Garantizamos que no vendemos, no alquilamos, ni compartimos tu información personal con terceros.</strong></p>
+            
+            <h3>3. Transacciones Seguras</h3>
+            <p>Nuestra web funciona como un catálogo digital avanzado. Toda la gestión de pagos, envío de datos sensibles y confirmación final se realiza de forma cifrada y directa a través del cifrado de extremo a extremo de nuestro canal oficial de WhatsApp, brindándote una capa extra de seguridad financiera.</p>
+        `;
+    } else if (slug === "faq") {
+        title = "Preguntas Frecuentes";
+        content = `
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin-bottom: 8px;">¿Cuáles son los métodos de pago?</h3>
+                <p>Aceptamos Pago Móvil, Transferencias (Bs), Efectivo (Solo para entregas personales en Barcelona) y Binance Pay (USDT). <strong style="color: var(--color-success);">¡Ofrecemos descuentos exclusivos si pagas en divisas en efectivo o por Binance!</strong></p>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin-bottom: 8px;">¿Dónde están ubicados?</h3>
+                <p>Somos una tienda online operando desde Barcelona, Edo. Anzoátegui. Realizamos entregas personales previo acuerdo en Urb. Cortijo de Oriente y hacemos envíos diarios a todo el país.</p>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin-bottom: 8px;">¿Hacen ventas al mayor?</h3>
+                <p>Actualmente trabajamos únicamente con ventas al detal para garantizar la exclusividad de nuestros drops y mantener el control de calidad en cada pieza enviada.</p>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin-bottom: 8px;">¿Puedo apartar una prenda?</h3>
+                <p>Por la alta rotación de nuestro inventario, no realizamos apartados sin previo pago. Las prendas solo se aseguran una vez confirmado el comprobante.</p>
+            </div>
+        `;
+    } else if (slug === "tallas") {
+        title = "Guía de Tallas";
+        content = `
+            <p style="margin-bottom: 25px;">La mayoría de nuestras prendas tienen un corte estándar o un ajuste <em>oversize</em> (dependiendo de la colección). A continuación, te dejamos una guía referencial. Si tienes dudas con una prenda específica o sobre cómo te quedará, ¡escríbenos al WhatsApp y te asesoraremos!</p>
+            
+            <h3>Franelas y Suéteres (Corte Regular / Oversize)</h3>
+            <ul style="list-style: inside; margin-bottom: 25px; color: var(--color-text-light);">
+                <li><strong>S (Small):</strong> Ideal para contexturas delgadas.</li>
+                <li><strong>M (Medium):</strong> Ajuste clásico y versátil.</li>
+                <li><strong>L (Large):</strong> Mayor holgura. Si eres M y buscas un estilo <em>baggy</em> (ancho), esta es tu talla.</li>
+                <li><strong>XL (Extra Large):</strong> Corte amplio y relajado para estilo streetwear puro.</li>
+            </ul>
+
+            <p style="color: var(--color-text-light); margin-bottom: 25px; border-left: 3px solid var(--color-primary); padding-left: 15px;"><em>* Nota: Las prendas marcadas explícitamente como "Oversize" están diseñadas para quedar holgadas. Te recomendamos pedir tu talla habitual para lograr ese look, o pedir una talla menos si prefieres un ajuste más a la medida.</em></p>
+            
+            <h3>Shorts, Biker y Leggins (Damas)</h3>
+            <ul style="list-style: inside; color: var(--color-text-light);">
+                <li><strong>XS / S:</strong> Tallas pequeñas, alta compresión.</li>
+                <li><strong>M:</strong> Talla media estándar.</li>
+                <li><strong>L / XL:</strong> Mayor rango de elasticidad.</li>
+                <li><strong>Talla Única:</strong> Prendas fabricadas con licra inteligente de alta elongación, que se adaptan cómodamente desde una talla S hasta una L.</li>
+            </ul>
+        `;
+    } else {
+        // Lógica de error 404
+        return renderHome();
+    }
 
     document.title = `${title} | Rom Store`;
 
@@ -236,20 +342,59 @@ function renderPolicy(slug) {
         <div class="fade-in policy-container">
             <h1 class="policy-title">${title}</h1>
             <div class="policy-content">
-                <p>Estamos trabajando para detallar y formalizar esta sección. Muy pronto estará disponible con toda la información correspondiente.</p>
-                <br>
-                <p>Si tienes alguna duda o requerimiento urgente relacionado con <strong>${title.toLowerCase()}</strong>, por favor comunícate con nosotros directamente a través de nuestro canal de <a href="https://wa.me/584125019508" style="color: var(--color-success); font-weight: bold; text-decoration: underline;">WhatsApp</a>.</p>
+                ${content}
+                
+                <div style="margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--color-border); text-align: center;">
+                    <h3 style="margin-bottom: 10px; font-size: 1.3rem;">¿Tienes alguna otra duda?</h3>
+                    <p style="color: var(--color-text-light); margin-bottom: 20px;">Nuestro equipo de soporte está listo para ayudarte directamente en nuestro chat oficial.</p>
+                    <a href="https://wa.me/${wppNumber}" target="_blank" class="btn-primary" style="display: inline-flex; width: auto; align-items: center; justify-content: center; gap: 10px; padding: 15px 35px; background: var(--color-success); color: white;">
+                        <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Contáctanos por WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderThankYou() {
+    document.title = "Pedido Confirmado | Rom Store";
+    
+    const retryUrl = localStorage.getItem('rom_last_order_url') || `https://wa.me/${wppNumber}`;
+
+    appRoot.innerHTML = `
+        <div class="fade-in policy-container" style="text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
+            <i class="fas fa-check-circle" style="font-size: 4.5rem; color: var(--color-success); margin-bottom: 25px;"></i>
+            <h1 class="policy-title" style="margin-bottom: 15px; font-size: clamp(1.8rem, 4vw, 2.5rem);">¡Gracias por tu pedido!</h1>
+            <p style="font-size: 1.1rem; color: var(--color-text-light); max-width: 600px; margin: 0 auto 30px; line-height: 1.6;">
+                Tu carrito ha sido procesado. Se acaba de abrir una pestaña para enviar tu orden por WhatsApp. <br><br>
+                <strong>Por favor, envía el mensaje y te atenderemos en breve para confirmar el pago y el envío.</strong>
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 350px; margin-bottom: 50px;">
+                <a href="${retryUrl}" target="_blank" class="btn-primary" style="background: var(--color-success); color: white; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> ¿No se abrió el chat? Reintentar
+                </a>
+                <button onclick="navigateTo('/catalogo/todos')" class="btn-primary" style="background: var(--color-primary); color: var(--color-bg); display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="fas fa-shopping-bag" style="font-size: 1.1rem;"></i> Seguir Comprando
+                </button>
+            </div>
+
+            <div style="border-top: 1px solid var(--color-border); padding-top: 30px; width: 100%; max-width: 400px;">
+                <h3 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; color: var(--color-text);">Únete a nuestra comunidad</h3>
+                <div class="social-icons" style="justify-content: center; gap: 25px;">
+                    <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://tiktok.com/@paty.rengel" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
             </div>
         </div>
     `;
 }
 
 function renderProduct(slug) {
-    // Ahora buscamos el producto comparando su nombre convertido a slug con la URL
     const product = products.find(p => generateSlug(p.name) === slug);
     
     if (!product) {
-        document.title = "Producto no encontrado | Rom Store";
+        // Redirección 404 de productos al inicio
         return renderHome();
     }
 
@@ -464,6 +609,7 @@ window.addToCart = function(id) {
         cart.push({ ...product, selectedColor: color, selectedSize: size, qty: qty });
     }
     
+    saveCart(); 
     updateCartBadge();
     showToast("Añadido a la bolsa");
     toggleCart(); 
@@ -479,12 +625,14 @@ window.updateCartQty = function(index, change) {
     if (cart[index].qty < 1) {
         cart.splice(index, 1); 
     }
+    saveCart(); 
     updateCartBadge();
     renderCart();
 }
 
 window.removeFromCart = function(index) {
     cart.splice(index, 1);
+    saveCart(); 
     updateCartBadge();
     renderCart();
 }
@@ -526,11 +674,11 @@ function renderCart() {
     cartTotalEl.innerText = `$${total.toFixed(2)}`;
 }
 
-// --- 8. CHECKOUT A WHATSAPP ---
+// --- 8. CHECKOUT A WHATSAPP Y PÁGINA DE GRACIAS ---
 checkoutBtn.addEventListener('click', () => {
     if(cart.length === 0) return;
 
-    let msg = "*ORDEN DE COMPRA | ROM STORE*\n";
+    let msg = "*ORDEN DE COMPRA | ROM STORE 🛒*\n";
     msg += "━━━━━━━━━━━━━━━━━━\n\n";
 
     cart.forEach((item, index) => {
@@ -544,10 +692,20 @@ checkoutBtn.addEventListener('click', () => {
     msg += "━━━━━━━━━━━━━━━━━━\n";
     msg += `*TOTAL A PAGAR: $${total}*\n`;
     msg += "_(Sin incluir delivery o envíos nacionales)_\n\n";
-    msg += "¡Hola! Quisiera procesar esta orden y conocer los métodos de pago disponibles.";
+    msg += "¡Hola! Quisiera procesar esta orden y conocer los métodos de entrega y de pago disponibles.";
 
     const whatsappUrl = `https://wa.me/${wppNumber}?text=${encodeURIComponent(msg)}`;
+    
+    localStorage.setItem('rom_last_order_url', whatsappUrl);
+
+    cart = [];
+    saveCart();
+    updateCartBadge();
+    closeAllUI();
+
     window.open(whatsappUrl, '_blank');
+    
+    navigateTo('/checkout/gracias');
 });
 
 // --- 9. MOTOR DE BÚSQUEDA ---
