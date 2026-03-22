@@ -1,4 +1,4 @@
-/* style.css - ROM STORE Premium Styles (Thumbnail Carousel Final) */
+/* style.css - ROM STORE Premium Styles (Grid Auto-Height Fix) */
 
 :root {
     /* Paleta Monocromática Premium */
@@ -244,20 +244,20 @@ button {
     background: #fafafa;
 }
 
-/* Modal de Búsqueda */
+/* --- Modal de Búsqueda (Dentro del Header) --- */
 .search-modal {
-    position: fixed;
-    top: var(--nav-height); 
+    position: absolute;
+    top: 100%; 
     left: 0;
     width: 100%;
     background: var(--color-bg);
     border-bottom: 1px solid var(--color-border);
-    z-index: 990;
+    z-index: -1; 
     padding: 20px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.08);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
+    transform: translateY(-15px);
     transition: all var(--transition-smooth);
 }
 
@@ -413,17 +413,21 @@ button {
 /* --- Componentes de Producto (Grid y Tarjetas) --- */
 .catalog-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    /* minmax(0, 1fr) evita que los textos largos desborden la cuadrícula en móviles */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px 10px;
     padding: 20px 10px;
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .product-card {
     position: relative;
     cursor: pointer;
     display: block;
+    min-width: 0; 
+    width: 100%;
 }
 
 .product-card-img-wrapper {
@@ -468,9 +472,15 @@ button {
     font-weight: 500;
     color: var(--color-text-light);
     margin-bottom: 5px;
-    white-space: nowrap;
+    
+    /* FIX: Permite hasta 2 líneas naturales, sin forzar altura si solo ocupa 1 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.4;
 }
 
 .price-container {
@@ -523,9 +533,9 @@ button {
 .thumbnail-gallery-container {
     position: relative;
     width: 100%;
-    max-width: 360px; /* Límite seguro para no desbordar teléfonos pequeños */
+    max-width: 360px; 
     margin: 15px auto 0; 
-    padding: 0 35px; /* Espacio reservado para las flechas */
+    padding: 0 35px; 
     box-sizing: border-box;
 }
 
@@ -537,9 +547,6 @@ button {
     scroll-snap-type: x mandatory;
     scrollbar-width: none; 
     -ms-overflow-style: none;
-    
-    /* Esta línea es la que centra las imágenes si son 2 o 3, 
-       y permite scroll si son 5 o más */
     width: max-content; 
     max-width: 100%;
     margin: 0 auto;
@@ -858,6 +865,14 @@ button {
     color: var(--color-text-light);
 }
 
+/* Icono SVG de Binance Pay personalizado para igualar los FontAwesome */
+.binance-svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .footer-bottom p {
     font-size: 0.8rem;
     color: #888;
@@ -951,7 +966,8 @@ button {
 /* --- Media Queries (Desktop) --- */
 @media (min-width: 768px) {
     .catalog-grid {
-        grid-template-columns: repeat(4, 1fr);
+        /* FIX CRÍTICO PC: minmax(0, 1fr) */
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 30px;
         padding: 40px 20px;
     }
@@ -964,7 +980,7 @@ button {
 
     /* === Ajuste Carrusel PC === */
     .thumbnail-gallery-container {
-        max-width: 440px; /* Un poco más amplio en PC */
+        max-width: 440px; 
         margin: 15px auto 0;
         padding: 0 45px; 
     }

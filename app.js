@@ -30,6 +30,17 @@ const closeSearch = document.getElementById('close-search');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
 
+// --- HELPER: Generador de URLs Amigables (Slugs) ---
+function generateSlug(text) {
+    return text.toString().toLowerCase()
+        .trim()
+        .normalize("NFD")                   // Remueve acentos
+        .replace(/[\u0300-\u036f]/g, "")    // Limpia caracteres especiales
+        .replace(/\s+/g, '-')               // Cambia espacios por guiones
+        .replace(/[^\w\-]+/g, '')           // Remueve todo lo que no sea palabra o guión
+        .replace(/\-\-+/g, '-');            // Evita guiones dobles
+}
+
 // --- 3. GESTIÓN DE INTERFACES (UI) ---
 function toggleMenu() {
     sideDrawer.classList.add('active');
@@ -76,7 +87,7 @@ function closeSearchModal() {
 }
 closeSearch.addEventListener('click', closeSearchModal);
 
-// --- 4. ENRUTAMIENTO SPA (Sin #) ---
+// --- 4. ENRUTAMIENTO SPA (History API) ---
 function navigateTo(url) {
     history.pushState(null, null, url);
     handleRoute();
@@ -107,8 +118,8 @@ function handleRoute() {
         const catSlug = path.split('/')[2];
         renderCategory(catSlug);
     } else if (path.startsWith('/producto/')) {
-        const prodId = parseInt(path.split('/')[2]);
-        renderProduct(prodId);
+        const prodSlug = path.split('/')[2]; // Ahora lee el nombre de la URL
+        renderProduct(prodSlug);
     } else if (path.startsWith('/politica/')) {
         const policySlug = path.split('/')[2];
         renderPolicy(policySlug);
@@ -127,6 +138,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // --- 5. RENDERIZADO DE VISTAS ---
 
 function renderHome() {
+    document.title = "Rom Store | Elite Sportswear & Streetwear";
+    
     const visibleProducts = products.filter(p => !p.hidden);
     const featured = visibleProducts.slice(0, 4); 
     const onSaleProducts = visibleProducts.filter(p => p.onSale).slice(0, 4); 
@@ -195,6 +208,8 @@ function renderCategory(slug) {
     else if (slug === "hombre") { catName = "Colección Hombre"; filtered = visibleProducts.filter(p => p.category.includes("Caballeros")); }
     else if (slug === "ofertas") { catName = "Sale / Archivo"; filtered = visibleProducts.filter(p => p.onSale); }
 
+    document.title = `${catName} | Rom Store`;
+
     appRoot.innerHTML = `
         <div style="padding: 40px 10px; max-width: 1200px; margin: 0 auto; min-height: 60vh;">
             <h2 class="fade-in" style="text-transform: uppercase; font-size: 1.8rem; margin-bottom: 30px; font-weight: 800; text-align: center;">${catName}</h2>
@@ -215,6 +230,8 @@ function renderPolicy(slug) {
     else if (slug === "tallas") title = "Guía de Tallas";
     else title = "Información Legal";
 
+    document.title = `${title} | Rom Store`;
+
     appRoot.innerHTML = `
         <div class="fade-in policy-container">
             <h1 class="policy-title">${title}</h1>
@@ -227,9 +244,16 @@ function renderPolicy(slug) {
     `;
 }
 
-function renderProduct(id) {
-    const product = products.find(p => p.id === id);
-    if (!product) return renderHome();
+function renderProduct(slug) {
+    // Ahora buscamos el producto comparando su nombre convertido a slug con la URL
+    const product = products.find(p => generateSlug(p.name) === slug);
+    
+    if (!product) {
+        document.title = "Producto no encontrado | Rom Store";
+        return renderHome();
+    }
+
+    document.title = `${product.name} | Rom Store`;
 
     window.currentProductImages = product.images;
     window.currentImageIndex = 0;
@@ -329,7 +353,7 @@ function createProductCard(p) {
         : `<div class="price-container"><span class="product-price">$${p.price.toFixed(2)}</span></div>`;
 
     return `
-        <a href="/producto/${p.id}" data-route class="product-card fade-in">
+        <a href="/producto/${generateSlug(p.name)}" data-route class="product-card fade-in">
             ${badge}
             <div class="product-card-img-wrapper">
                 <img src="${p.images[0]}" alt="${p.name}" loading="lazy">
@@ -347,38 +371,31 @@ function createProductCard(p) {
 window.setMainImage = function(index) {
     const images = window.currentProductImages;
     
-    // Bucle infinito: Si llega al final, pasa al principio y viceversa.
     if (index < 0) index = images.length - 1;
     if (index >= images.length) index = 0;
     
     window.currentImageIndex = index;
     document.getElementById('main-product-img').src = images[index];
 
-    // Actualizar clase activa en miniaturas
     document.querySelectorAll('.thumbnail-scroll img').forEach((img, i) => {
         img.classList.toggle('active', i === index);
     });
 
-    // Auto-centrar la miniatura activa en el contenedor
     const activeThumb = document.getElementById(`thumb-${index}`);
     if (activeThumb) {
         activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 }
 
-// Cambiar la imagen principal (usado por el Swipe y las flechas de la miniatura)
 window.changeImage = function(direction) {
     setMainImage(window.currentImageIndex + direction);
 }
 
-// Desplazar manualmente el contenedor de las miniaturas con las flechas
 window.scrollThumbnails = function(direction) {
     const scroll = document.getElementById('thumbnail-scroll');
-    // Mueve la tira aproximadamente el ancho de 2 miniaturas (150px)
     scroll.scrollBy({ left: direction * 150, behavior: 'smooth' });
 }
 
-// Eventos de Swipe táctil en la imagen principal (Mobile)
 window.handleTouchStart = function(e) {
     touchStartX = e.changedTouches[0].screenX;
 }
@@ -389,11 +406,11 @@ window.handleTouchEnd = function(e) {
 }
 
 function handleSwipe() {
-    const threshold = 40; // Distancia mínima para detectar un deslizamiento intencional
+    const threshold = 40; 
     if (touchStartX - touchEndX > threshold) {
-        changeImage(1); // Deslizó el dedo a la izquierda -> Siguiente
+        changeImage(1); 
     } else if (touchEndX - touchStartX > threshold) {
-        changeImage(-1); // Deslizó el dedo a la derecha -> Anterior
+        changeImage(-1); 
     }
 }
 
@@ -563,7 +580,7 @@ searchInput.addEventListener('input', (e) => {
             : `$${p.price.toFixed(2)}`;
 
         return `
-            <a href="/producto/${p.id}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
+            <a href="/producto/${generateSlug(p.name)}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
                 <img src="${p.images[0]}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
                 <div>
                     <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; text-transform: uppercase;">${p.name}</h4>

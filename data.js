@@ -57,7 +57,7 @@ const products = [
     },
     { 
         id: 2, 
-        name: "SHORT NIKE CON LICRA", 
+        name: "SHORT NIKE CON LICRA HOMBRE", 
         price: 20, 
         category: ["Caballeros"], 
         onSale: false, 
@@ -107,7 +107,7 @@ const products = [
         category: ["Damas"], 
         onSale: false, 
         images: ["https://i.ibb.co/Z6CyWGKC/Whats-App-Image-2026-02-12-at-21-02-22.jpg", "https://i.ibb.co/0ztnfXs/Whats-App-Image-2026-02-12-at-21-01-44.jpg"], 
-        stock: { "Azul": ["S", "M"], "Negro": ["S", "M"], "Beige": ["L", "XL"], "Verde": ["L", "XL"] },
+        stock: { "Azul": ["S", "M"], "Negro": ["S", "M"], "Verde": ["L", "XL"] },
         description: "Short deportivo para mujer con licra interna para mayor seguridad y confort.",
         tags: ["short", "licra", "mujer", "gym", "entrenamiento"]
     },
@@ -147,12 +147,12 @@ const products = [
     },
     { 
         id: 13, 
-        name: "SHORT NIKE CON LICRA", 
+        name: "SHORT NIKE CON LICRA DAMA", 
         price: 20, 
         category: ["Damas"], 
         onSale: false, 
         images: ["https://i.ibb.co/xtgNftS5/Whats-App-Image-2026-01-15-at-18-22-44.jpg", "https://i.ibb.co/gb6Tr38K/Whats-App-Image-2026-01-21-at-00-39-14.jpg", "https://i.ibb.co/ksCmwq6B/Whats-App-Image-2026-01-21-at-00-48-27.jpg", "https://i.ibb.co/nq7wrMCN/Whats-App-Image-2026-01-21-at-00-44-26.jpg"], 
-        stock: { "Negro": ["XS", "S"], "Morado": ["S", "M"], "Beige": ["XS", "S"] },
+        stock: { "Morado": ["S", "M"], "Beige": ["XS", "S"] },
         description: "Short Nike para damas con licra interior, confort y rendimiento.",
         tags: ["nike", "short", "licra", "mujer", "gym", "correr"]
     },
@@ -199,7 +199,7 @@ const products = [
         outOfStock: true, 
         images: ["https://i.ibb.co/B2M1yqG9/Whats-App-Image-2026-01-21-at-01-16-51.jpg", "https://i.ibb.co/67LdJpp4/Whats-App-Image-2026-01-21-at-00-18-52.jpg", "https://i.ibb.co/4Z8BxT4d/Whats-App-Image-2026-01-21-at-00-18-52-1.jpg"], 
         stock: { "Azul": ["XL", "L"], "Gris": ["S"] },
-        description: "Edición V1 del short con licra integrada. Clásico de ROM STORE.",
+        description: "Short 2 en 1 ideal para running y levantamiento de pesas con máxima movilidad.",
         tags: ["nike", "short", "licra", "gym", "agotado", "hombre"]
     },
     { 
