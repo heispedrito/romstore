@@ -1,4 +1,4 @@
-// app.js - Motor Lógico de ROM STORE (Versión Premium Final)
+// app.js - Motor Lógico de ROM STORE (Versión Premium Final + UX)
 
 // --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
 let cart = JSON.parse(localStorage.getItem('rom_cart')) || [];
@@ -6,6 +6,12 @@ const wppNumber = "584125019508";
 
 function saveCart() {
     localStorage.setItem('rom_cart', JSON.stringify(cart));
+}
+
+function getVisibleProducts() {
+    return products
+        .filter(p => !p.hidden)
+        .sort((a, b) => (a.order || 999) - (b.order || 999));
 }
 
 // Variables para la galería interactiva
@@ -16,6 +22,7 @@ let touchEndX = 0;
 
 // --- 2. SELECTORES DEL DOM ---
 const uiOverlay = document.getElementById('ui-overlay');
+const modalOverlay = document.getElementById('modal-overlay');
 const sideDrawer = document.getElementById('side-drawer');
 const cartSidebar = document.getElementById('cart-sidebar');
 const appRoot = document.getElementById('app-root');
@@ -25,6 +32,7 @@ const closeMenu = document.getElementById('close-menu');
 const cartTrigger = document.getElementById('cart-trigger');
 const closeCart = document.getElementById('close-cart');
 const cartItemsContainer = document.getElementById('cart-items');
+const cartFooterEl = document.getElementById('cart-footer');
 const cartTotalEl = document.getElementById('cart-total');
 const cartCountEl = document.getElementById('cart-count');
 const checkoutBtn = document.getElementById('checkout-btn');
@@ -33,6 +41,14 @@ const searchModal = document.getElementById('search-modal');
 const closeSearch = document.getElementById('close-search');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
+
+// Selectores Nuevos Modales
+const wppModal = document.getElementById('wpp-modal');
+const sizeGuideModal = document.getElementById('size-guide-modal');
+const closeWppModal = document.getElementById('close-wpp-modal');
+const closeSizeModal = document.getElementById('close-size-modal');
+const confirmWppBtn = document.getElementById('confirm-wpp-btn');
+const customerNameInput = document.getElementById('customer-name-input');
 
 // --- HELPER: Generador de URLs Amigables (Slugs) ---
 function generateSlug(text) {
@@ -61,6 +77,11 @@ function closeAllUI() {
     sideDrawer.classList.remove('active');
     cartSidebar.classList.remove('active');
     uiOverlay.classList.remove('active');
+    
+    // Cierra también los modales personalizados por seguridad
+    if(wppModal) wppModal.classList.remove('active');
+    if(sizeGuideModal) sizeGuideModal.classList.remove('active');
+    if(modalOverlay) modalOverlay.classList.remove('active');
 }
 
 menuTrigger.addEventListener('click', toggleMenu);
@@ -68,6 +89,28 @@ closeMenu.addEventListener('click', closeAllUI);
 cartTrigger.addEventListener('click', toggleCart);
 closeCart.addEventListener('click', closeAllUI);
 uiOverlay.addEventListener('click', closeAllUI);
+
+// Eventos de los Nuevos Modales Custom
+if(closeWppModal) closeWppModal.addEventListener('click', closeAllUI);
+if(closeSizeModal) closeSizeModal.addEventListener('click', closeAllUI);
+if(modalOverlay) modalOverlay.addEventListener('click', closeAllUI);
+
+// Cerrar modales con la tecla Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeAllUI();
+        closeSearchModal();
+    }
+});
+
+// Cerrar buscador al hacer clic afuera
+document.addEventListener('click', (e) => {
+    if (searchModal.classList.contains('active')) {
+        if (!searchModal.contains(e.target) && !searchTrigger.contains(e.target)) {
+            closeSearchModal();
+        }
+    }
+});
 
 searchTrigger.addEventListener('click', () => {
     if (searchModal.classList.contains('active')) {
@@ -147,7 +190,7 @@ window.addEventListener('DOMContentLoaded', () => {
 function renderHome() {
     document.title = "Rom Store | Elite Sportswear & Streetwear";
     
-    const visibleProducts = products.filter(p => !p.hidden);
+    const visibleProducts = getVisibleProducts();
     const featured = visibleProducts.slice(0, 4); 
     const onSaleProducts = visibleProducts.filter(p => p.onSale).slice(0, 4); 
     
@@ -208,13 +251,13 @@ function renderHome() {
 function renderCategory(slug) {
     let catName = "";
     let filtered = [];
-    const visibleProducts = products.filter(p => !p.hidden);
+    const visibleProducts = getVisibleProducts();
 
     if (slug === "todos") { catName = "Todo el Catálogo"; filtered = visibleProducts; }
     else if (slug === "mujer") { catName = "Colección Mujer"; filtered = visibleProducts.filter(p => p.category.includes("Damas")); }
     else if (slug === "hombre") { catName = "Colección Hombre"; filtered = visibleProducts.filter(p => p.category.includes("Caballeros")); }
-    else if (slug === "ofertas") { catName = "Sale / Archivo"; filtered = visibleProducts.filter(p => p.onSale); }
-    else { return renderHome(); } // Redirección 404 de categorías
+    else if (slug === "ofertas") { catName = "Sale / Ofertas"; filtered = visibleProducts.filter(p => p.onSale); }
+    else { return renderHome(); }
 
     document.title = `${catName} | Rom Store`;
 
@@ -273,7 +316,7 @@ function renderPolicy(slug) {
             <p>Hacemos el mayor esfuerzo para mostrar los colores y detalles de nuestras prendas con la mayor precisión fotográfica posible. Sin embargo, debido a las diferencias de calibración en pantallas, monitores y dispositivos móviles, no podemos garantizar que el color visualizado sea 100% idéntico a la prenda física.</p>
             
             <h3>4. Prevención de Fraudes y Canales Oficiales</h3>
-            <p>Para garantizar tu seguridad y evitar estafas, te recordamos que nuestro <strong>ÚNICO</strong> número oficial de atención y ventas vía WhatsApp es el <strong style="color: var(--color-success); font-size: 1.1rem;">+58 412-5019508</strong>. Nuestras únicas redes sociales oficiales son Instagram (<strong><a href="https://instagram.com/rom.vzla" target="_blank">@rom.vzla</a></strong>) y TikTok (<strong><a href="https://tiktok.com/@paty.rengel" target="_blank">@paty.rengel</a></strong>).</p>
+            <p>Para garantizar tu seguridad y evitar estafas, te recordamos que nuestro <strong>ÚNICO</strong> número oficial de atención y ventas vía WhatsApp es el <strong style="color: var(--color-success); font-size: 1.1rem;">+58 412-5019508</strong>. Nuestras únicas redes sociales oficiales son Instagram (<strong><a href="https://instagram.com/rom.vzla" target="_blank">@rom.vzla</a></strong>) y TikTok (<strong><a href="https://tiktok.com/@rom.vzla" target="_blank">@rom.vzla</a></strong>).</p>
             <p style="color: var(--color-danger); font-weight: 600; margin-top: 10px; padding: 10px; border-left: 3px solid var(--color-danger); background: #fff5f5;">ROM STORE no se hace responsable por compras, transferencias de dinero o acuerdos realizados a través de números de teléfono, perfiles falsos o intermediarios no autorizados. ¡Verifica siempre nuestros canales antes de pagar!</p>
         `;
     } else if (slug === "privacidad") {
@@ -332,7 +375,6 @@ function renderPolicy(slug) {
             </ul>
         `;
     } else {
-        // Lógica de error 404
         return renderHome();
     }
 
@@ -367,7 +409,7 @@ function renderThankYou() {
             <h1 class="policy-title" style="margin-bottom: 15px; font-size: clamp(1.8rem, 4vw, 2.5rem);">¡Gracias por tu pedido!</h1>
             <p style="font-size: 1.1rem; color: var(--color-text-light); max-width: 600px; margin: 0 auto 30px; line-height: 1.6;">
                 Tu carrito ha sido procesado. Se acaba de abrir una pestaña para enviar tu orden por WhatsApp. <br><br>
-                <strong>Por favor, envía el mensaje y te atenderemos en breve para confirmar el pago y el envío.</strong>
+                <strong>Por favor, envía el mensaje y te atenderemos en breve para confirmar el pago y la entrega.</strong>
             </p>
 
             <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 350px; margin-bottom: 50px;">
@@ -383,7 +425,7 @@ function renderThankYou() {
                 <h3 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; color: var(--color-text);">Únete a nuestra comunidad</h3>
                 <div class="social-icons" style="justify-content: center; gap: 25px;">
                     <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="https://tiktok.com/@paty.rengel" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://www.tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
         </div>
@@ -394,7 +436,6 @@ function renderProduct(slug) {
     const product = products.find(p => generateSlug(p.name) === slug);
     
     if (!product) {
-        // Redirección 404 de productos al inicio
         return renderHome();
     }
 
@@ -403,12 +444,18 @@ function renderProduct(slug) {
     window.currentProductImages = product.images;
     window.currentImageIndex = 0;
 
-    const colors = Object.keys(product.stock);
+    // Ordenamiento Dinámico de COLORES: Los disponibles (true) van primero.
+    const colors = Object.keys(product.stock).sort((a, b) => {
+        const aHasStock = Object.values(product.stock[a]).some(v => v === true);
+        const bHasStock = Object.values(product.stock[b]).some(v => v === true);
+        return (aHasStock === bHasStock) ? 0 : aHasStock ? -1 : 1;
+    });
+
     const priceDisplay = (product.onSale && product.oldPrice) 
         ? `<span class="old-price" style="font-size: 1.2rem; margin-right: 15px;">$${product.oldPrice.toFixed(2)}</span> <span style="color: var(--color-danger);">$${product.price.toFixed(2)}</span>`
         : `$${product.price.toFixed(2)}`;
 
-    const suggestions = products.filter(p => p.id !== product.id && !p.hidden && p.category.some(c => product.category.includes(c))).slice(0, 4);
+    const suggestions = getVisibleProducts().filter(p => p.id !== product.id && p.category.some(c => product.category.includes(c))).slice(0, 4);
 
     appRoot.innerHTML = `
         <div class="fade-in product-detail-container">
@@ -441,13 +488,19 @@ function renderProduct(slug) {
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Color Seleccionado</label>
                     <select id="select-color" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" onchange="updateSizes()">
                         <option value="" disabled selected>Elige un color</option>
-                        ${colors.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        ${colors.map(c => {
+                            const hasStock = Object.values(product.stock[c]).some(v => v === true);
+                            return `<option value="${c}" ${!hasStock ? 'disabled' : ''}>${c} ${!hasStock ? '(Agotado)' : ''}</option>`;
+                        }).join('')}
                     </select>
                 </div>
                 
                 <div style="margin-bottom: 25px; display: flex; gap: 15px;">
                     <div style="flex: 2;">
-                        <label style="display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Talla</label>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                            <label style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Talla</label>
+                            <button type="button" onclick="document.getElementById('size-guide-modal').classList.add('active'); document.getElementById('modal-overlay').classList.add('active');" style="font-size: 0.75rem; color: var(--color-text-light); text-decoration: underline; background: transparent; border: none; padding: 0; cursor: pointer; text-transform: none; font-weight: normal;">Guía de Tallas</button>
+                        </div>
                         <select id="select-size" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" disabled>
                             <option value="" disabled selected>Elige una talla</option>
                         </select>
@@ -583,9 +636,21 @@ window.updateSizes = function() {
     const selectedColor = colorSelect.value;
     
     if(selectedColor && window.currentProductStock[selectedColor]) {
-        const sizes = window.currentProductStock[selectedColor];
+        const sizesObj = window.currentProductStock[selectedColor];
+        
+        // Ordenamiento Dinámico de TALLAS: Las disponibles (true) van primero.
+        const sortedSizes = Object.keys(sizesObj).sort((a, b) => {
+            const aHasStock = sizesObj[a];
+            const bHasStock = sizesObj[b];
+            return (aHasStock === bHasStock) ? 0 : aHasStock ? -1 : 1;
+        });
+        
         sizeSelect.innerHTML = '<option value="" disabled selected>Elige una talla</option>' + 
-                               sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+            sortedSizes.map(s => {
+                const isAvailable = sizesObj[s];
+                return `<option value="${s}" ${!isAvailable ? 'disabled' : ''}>${s} ${!isAvailable ? '(Agotado)' : ''}</option>`;
+            }).join('');
+            
         sizeSelect.disabled = false;
     }
 }
@@ -618,6 +683,11 @@ window.addToCart = function(id) {
 function updateCartBadge() {
     const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
     cartCountEl.innerText = totalItems;
+    if (totalItems === 0) {
+        cartCountEl.style.display = 'none';
+    } else {
+        cartCountEl.style.display = 'flex';
+    }
 }
 
 window.updateCartQty = function(index, change) {
@@ -637,19 +707,40 @@ window.removeFromCart = function(index) {
     renderCart();
 }
 
+window.clearCart = function() {
+    if (confirm("¿Estás seguro de que deseas vaciar tu bolsa?")) {
+        cart = [];
+        saveCart();
+        updateCartBadge();
+        renderCart();
+    }
+}
+
 function renderCart() {
+    const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = `
-            <div style="padding: 60px 20px; text-align: center; color: var(--color-text-light);">
+            <div class="empty-cart-container">
                 <i class="fas fa-shopping-bag" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                <p style="font-size: 1rem; font-weight: 500;">Tu bolsa está vacía.</p>
-                <button onclick="navigateTo('/catalogo/todos')" class="btn-primary" style="margin-top: 20px; width: auto; display: inline-block; padding: 12px 25px;">Continuar Comprando</button>
+                <p style="font-size: 1rem; font-weight: 500; margin-bottom: 20px;">Tu bolsa está vacía.</p>
+                <button onclick="closeAllUI(); navigateTo('/catalogo/todos')" class="btn-primary" style="width: auto; display: inline-block; padding: 12px 25px;">Continuar Comprando</button>
             </div>`;
-        cartTotalEl.innerText = '$0.00';
+        if (cartFooterEl) cartFooterEl.classList.add('d-none');
         return;
     }
 
-    cartItemsContainer.innerHTML = cart.map((item, index) => `
+    if (cartFooterEl) cartFooterEl.classList.remove('d-none');
+
+    let clearCartHTML = '';
+    if (totalItems > 3) {
+        clearCartHTML = `
+        <div style="padding: 10px 20px; text-align: right;">
+            <button onclick="clearCart()" class="clear-cart-btn">Vaciar Bolsa</button>
+        </div>`;
+    }
+
+    cartItemsContainer.innerHTML = clearCartHTML + cart.map((item, index) => `
         <div class="fade-in" style="display: flex; gap: 15px; padding: 20px; border-bottom: 1px solid var(--color-border);">
             <img src="${item.images[0]}" style="width: 80px; height: 100px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
@@ -675,11 +766,24 @@ function renderCart() {
 }
 
 // --- 8. CHECKOUT A WHATSAPP Y PÁGINA DE GRACIAS ---
+
 checkoutBtn.addEventListener('click', () => {
     if(cart.length === 0) return;
+    
+    wppModal.classList.add('active');
+    modalOverlay.classList.add('active');
+    customerNameInput.focus();
+});
 
-    let msg = "*ORDEN DE COMPRA | ROM STORE 🛒*\n";
+confirmWppBtn.addEventListener('click', () => {
+    const customerName = customerNameInput.value;
+
+    let msg = "*ORDEN DE COMPRA | ROM STORE*\n";
     msg += "━━━━━━━━━━━━━━━━━━\n\n";
+    
+    if (customerName.trim() !== '') {
+        msg += `*Cliente:* ${customerName.trim()}\n\n`;
+    }
 
     cart.forEach((item, index) => {
         msg += `*${index + 1}. ${item.name.toUpperCase()} (x${item.qty})*\n`;
@@ -701,52 +805,57 @@ checkoutBtn.addEventListener('click', () => {
     cart = [];
     saveCart();
     updateCartBadge();
-    closeAllUI();
+    closeAllUI(); 
+    
+    customerNameInput.value = '';
 
     window.open(whatsappUrl, '_blank');
     
     navigateTo('/checkout/gracias');
 });
 
-// --- 9. MOTOR DE BÚSQUEDA ---
+// --- 9. MOTOR DE BÚSQUEDA (Debounce Optimizado) ---
+let searchTimeout;
 searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    
-    if (query.length < 2) {
-        searchResults.innerHTML = '';
-        return;
-    }
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        if (query.length < 2) {
+            searchResults.innerHTML = '';
+            return;
+        }
 
-    const results = products.filter(p => 
-        (!p.hidden) && 
-        (p.name.toLowerCase().includes(query) || 
-        (p.tags && p.tags.some(t => t.toLowerCase().includes(query))))
-    );
+        const results = getVisibleProducts().filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            (p.tags && p.tags.some(t => t.toLowerCase().includes(query)))
+        );
 
-    if (results.length === 0) {
-        searchResults.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: var(--color-text-light);">
-                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.3;"></i>
-                <p style="font-size: 0.9rem;">No encontramos nada para "${query}".</p>
-            </div>`;
-        return;
-    }
+        if (results.length === 0) {
+            searchResults.innerHTML = `
+                <div style="padding: 30px; text-align: center; color: var(--color-text-light);">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p style="font-size: 0.9rem;">No encontramos nada para "${query}".</p>
+                </div>`;
+            return;
+        }
 
-    searchResults.innerHTML = results.map(p => {
-        const priceDisplay = (p.onSale && p.oldPrice) 
-            ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: #999; margin-right: 5px;">$${p.oldPrice.toFixed(2)}</span><span style="color: var(--color-danger);">$${p.price.toFixed(2)}</span>` 
-            : `$${p.price.toFixed(2)}`;
+        searchResults.innerHTML = results.map(p => {
+            const priceDisplay = (p.onSale && p.oldPrice) 
+                ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: #999; margin-right: 5px;">$${p.oldPrice.toFixed(2)}</span><span style="color: var(--color-danger);">$${p.price.toFixed(2)}</span>` 
+                : `$${p.price.toFixed(2)}`;
 
-        return `
-            <a href="/producto/${generateSlug(p.name)}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
-                <img src="${p.images[0]}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
-                <div>
-                    <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; text-transform: uppercase;">${p.name}</h4>
-                    <span style="font-weight: 700; font-size: 0.95rem;">${priceDisplay}</span>
-                </div>
-            </a>
-        `;
-    }).join('');
+            return `
+                <a href="/producto/${generateSlug(p.name)}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
+                    <img src="${p.images[0]}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
+                    <div>
+                        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; text-transform: uppercase;">${p.name}</h4>
+                        <span style="font-weight: 700; font-size: 0.95rem;">${priceDisplay}</span>
+                    </div>
+                </a>
+            `;
+        }).join('');
+    }, 300); 
 });
 
 // --- 10. INICIALIZACIÓN DE ACORDEONES (FOOTER MÓVIL) ---

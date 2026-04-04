@@ -51,7 +51,7 @@
                     <path d="M3 6h18"></path>
                     <path d="M16 10a4 4 0 0 1-8 0"></path>
                 </svg>
-                <span class="cart-badge" id="cart-count">0</span>
+                <span class="cart-badge" id="cart-count" style="display: none;">0</span>
             </button>
         </div>
 
@@ -68,6 +68,8 @@
 
     <div class="ui-overlay" id="ui-overlay"></div>
 
+    <div class="modal-overlay" id="modal-overlay"></div>
+
     <nav class="side-drawer" id="side-drawer">
         <div class="drawer-header">
             <span class="drawer-title">Explorar</span>
@@ -83,6 +85,7 @@
         </ul>
         <div class="drawer-footer">
             <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
             <a href="https://wa.me/584125019508" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         </div>
     </nav>
@@ -98,7 +101,7 @@
         </div>
         <div class="cart-body" id="cart-items">
             </div>
-        <div class="cart-footer">
+        <div class="cart-footer" id="cart-footer">
             <div class="cart-summary">
                 <span>Subtotal</span>
                 <span id="cart-total">$0.00</span>
@@ -111,6 +114,46 @@
         </div>
     </aside>
 
+    <div class="custom-modal" id="wpp-modal">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title">Casi listo...</h3>
+            <button class="icon-btn" id="close-wpp-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="custom-modal-body">
+            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--color-text-light);">¿Cómo te llamas? Nos ayuda a brindarte una mejor atención.</p>
+            <input type="text" id="customer-name-input" placeholder="Tu nombre o alias" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); border-radius: 4px; margin-bottom: 20px; font-family: inherit; font-size: 1rem; outline: none;">
+            <button class="btn-primary" id="confirm-wpp-btn" style="background-color: var(--color-success); color: white; border: none; padding: 16px;">
+                <i class="fab fa-whatsapp" style="margin-right: 8px; font-size: 1.1rem;"></i> Enviar Pedido
+            </button>
+        </div>
+    </div>
+
+    <div class="custom-modal" id="size-guide-modal">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title">Guía de Tallas</h3>
+            <button class="icon-btn" id="close-size-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="custom-modal-body" style="max-height: 60vh; overflow-y: auto;">
+            <p style="margin-bottom: 20px; font-size: 0.9rem; color: var(--color-text-light);">La mayoría de nuestras prendas tienen un corte estándar o un ajuste <em>oversize</em>. A continuación, una guía referencial:</p>
+            
+            <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Franelas y Suéteres</h4>
+            <ul style="list-style: none; padding: 0; margin-bottom: 20px; font-size: 0.85rem; color: var(--color-text-light);">
+                <li style="margin-bottom: 8px;"><strong>S:</strong> Ideal para contexturas delgadas.</li>
+                <li style="margin-bottom: 8px;"><strong>M:</strong> Ajuste clásico y versátil.</li>
+                <li style="margin-bottom: 8px;"><strong>L:</strong> Mayor holgura. Para un estilo baggy.</li>
+                <li style="margin-bottom: 8px;"><strong>XL:</strong> Corte amplio y relajado (Streetwear).</li>
+            </ul>
+            
+            <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Shorts, Biker y Leggins (Damas)</h4>
+            <ul style="list-style: none; padding: 0; margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-light);">
+                <li style="margin-bottom: 8px;"><strong>XS / S:</strong> Tallas pequeñas, alta compresión.</li>
+                <li style="margin-bottom: 8px;"><strong>M:</strong> Talla media estándar.</li>
+                <li style="margin-bottom: 8px;"><strong>L / XL:</strong> Mayor rango de elasticidad.</li>
+                <li style="margin-bottom: 8px;"><strong>Talla Única:</strong> Licra inteligente, se adapta de S a L.</li>
+            </ul>
+        </div>
+    </div>
+    
     <section class="newsletter-section">
         <div class="newsletter-content">
             <h3>ÚNETE AL CLUB ROM</h3>
@@ -129,7 +172,7 @@
                 <p class="footer-desc">Elite Sportswear & Style. Calidad, rendimiento y diseño en cada prenda, pensada para destacar en la calle y en el gimnasio.</p>
                 <div class="social-icons">
                     <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="https://tiktok.com/@paty.rengel" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://www.tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                     <a href="https://wa.me/584125019508" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
