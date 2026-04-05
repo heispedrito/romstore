@@ -36,7 +36,7 @@ const products = [
         category: ["Damas"], 
         onSale: false, 
         images: ["https://i.ibb.co/XrjrLjSV/Whats-App-Image-2026-03-19-at-20-52-24.jpg", "https://i.ibb.co/7N0DXh7R/Whats-App-Image-2026-03-19-at-s.jpg", "https://i.ibb.co/nNVrVJD4/Whats-App-Image-2026-03-19-at-20-52-24s.jpg", "https://i.ibb.co/3mnDyBbV/Whats-App-Image-2026-03-19-at-15-58-43-3.jpg", "https://i.ibb.co/vCg1VhJK/Whats-App-Image-2026-03-19-at-15-58-43-1.jpg"], 
-        stock: { "Negro": { "M": true }, "Beige": { "M": true }, "Marrón": { "M": false } },
+        stock: { "Negro": { "M": false }, "Beige": { "M": true }, "Marrón": { "M": false } },
         description: "Body faja corte hilo que moldea y estiliza tu figura de forma invisible y súper cómoda bajo tu ropa.",
         tags: ["body", "faja", "hilo", "mujer", "moldeador", "basico"]
     },
@@ -79,14 +79,15 @@ const products = [
     },
     { 
         id: 5, 
-        order: 70,
+        order: 175,
         name: "BOXER CALVIN KLEIN", 
         price: 3.99, 
         oldPrice: 6, 
         category: ["Caballeros"], 
         onSale: true, 
         images: ["https://i.ibb.co/mVJwWHMD/Whats-App-Image-2026-01-15-at-18-22-43-1.jpg", "https://i.ibb.co/VYJgckNP/Whats-App-Image-2026-01-21-at-01-51-48.jpg"], 
-        stock: { "Gris": { "XL": true } },
+        stock: { "Gris": { "XL": false } },
+        outOfStock: true, 
         description: "Ropa interior cómoda, de algodón suave y diseño minimalista.",
         tags: ["ropa interior", "calvin klein", "boxer", "basico", "hombre"]
     },
