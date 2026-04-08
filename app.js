@@ -1,6 +1,12 @@
-// app.js - Motor Lógico de ROM STORE (Versión Premium Final + UX)
+// app.js - Motor Lógico de ROM STORE (Conectado a Supabase)
+
+// --- CONFIGURACIÓN SUPABASE ---
+const supabaseUrl = 'https://hvgthlomkgzzibxaveap.supabase.co';
+const supabaseKey = 'sb_publishable_BkKlInWSSDxn1AC-8IQ7yQ_3Ia_FqQT';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
+let products = []; // Nace vacío y se llena desde Supabase
 let cart = JSON.parse(localStorage.getItem('rom_cart')) || [];
 const wppNumber = "584125019508"; 
 
@@ -19,6 +25,25 @@ window.currentImageIndex = 0;
 window.currentProductImages = [];
 let touchStartX = 0;
 let touchEndX = 0;
+
+// --- CARGA INICIAL DESDE BASE DE DATOS (SUPABASE) ---
+window.addEventListener('DOMContentLoaded', async () => {
+    // Descargamos los productos públicos
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('hidden', false) // Solo trae los que NO están ocultos
+        .order('order', { ascending: true });
+        
+    if(data) {
+        products = data;
+    }
+    
+    // Inicia la web una vez cargados los datos
+    handleRoute();
+    initAccordions(); 
+    updateCartBadge(); 
+});
 
 // --- 2. SELECTORES DEL DOM ---
 const uiOverlay = document.getElementById('ui-overlay');
@@ -52,6 +77,7 @@ const customerNameInput = document.getElementById('customer-name-input');
 
 // --- HELPER: Generador de URLs Amigables (Slugs) ---
 function generateSlug(text) {
+    if (!text) return '';
     return text.toString().toLowerCase()
         .trim()
         .normalize("NFD")                   
@@ -78,7 +104,6 @@ function closeAllUI() {
     cartSidebar.classList.remove('active');
     uiOverlay.classList.remove('active');
     
-    // Cierra también los modales personalizados por seguridad
     if(wppModal) wppModal.classList.remove('active');
     if(sizeGuideModal) sizeGuideModal.classList.remove('active');
     if(modalOverlay) modalOverlay.classList.remove('active');
@@ -90,7 +115,6 @@ cartTrigger.addEventListener('click', toggleCart);
 closeCart.addEventListener('click', closeAllUI);
 uiOverlay.addEventListener('click', closeAllUI);
 
-// Eventos de los Nuevos Modales Custom
 if(closeWppModal) closeWppModal.addEventListener('click', closeAllUI);
 if(closeSizeModal) closeSizeModal.addEventListener('click', closeAllUI);
 if(modalOverlay) modalOverlay.addEventListener('click', closeAllUI);
@@ -172,18 +196,11 @@ function handleRoute() {
         const policySlug = path.split('/')[2];
         renderPolicy(policySlug);
     } else {
-        // Redirección 404 global al inicio
         renderHome();
     }
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    handleRoute();
-    initAccordions(); 
-    updateCartBadge(); 
-});
 
 // --- 5. RENDERIZADO DE VISTAS ---
 
@@ -254,8 +271,8 @@ function renderCategory(slug) {
     const visibleProducts = getVisibleProducts();
 
     if (slug === "todos") { catName = "Todo el Catálogo"; filtered = visibleProducts; }
-    else if (slug === "mujer") { catName = "Colección Mujer"; filtered = visibleProducts.filter(p => p.category.includes("Damas")); }
-    else if (slug === "hombre") { catName = "Colección Hombre"; filtered = visibleProducts.filter(p => p.category.includes("Caballeros")); }
+    else if (slug === "mujer") { catName = "Colección Mujer"; filtered = visibleProducts.filter(p => (p.category || []).includes("Damas")); }
+    else if (slug === "hombre") { catName = "Colección Hombre"; filtered = visibleProducts.filter(p => (p.category || []).includes("Caballeros")); }
     else if (slug === "ofertas") { catName = "Sale / Ofertas"; filtered = visibleProducts.filter(p => p.onSale); }
     else { return renderHome(); }
 
@@ -283,7 +300,7 @@ function renderPolicy(slug) {
             <p>Realizamos entregas personales en <strong>Barcelona, Edo. Anzoátegui (Urb. Cortijo de Oriente)</strong> sin costo adicional, previo acuerdo de horario. También contamos con servicio de Delivery a zonas céntricas y aledañas con un costo extra, el cual será calculado dependiendo de tu ubicación exacta al momento de procesar tu orden.</p>
             
             <h3>2. Envíos Nacionales</h3>
-            <p>Llegamos a toda Venezuela a través de las agencias <strong>MRW y Zoom</strong>. Todos los envíos nacionales se despachan bajo la modalidad de <strong>Cobro en Destino (COD)</strong>. Esto significa que el cliente es responsable de cancelar el costo del flete directamente a la agencia al momento de retirar su paquete.</p>
+            <p>Llegamos a toda Venezuela a través de nuestras agencias aliadas <strong>MRW y Zoom</strong>. Todos los envíos nacionales se despachan bajo la modalidad de <strong>Cobro en Destino (COD)</strong>. Esto significa que el cliente es responsable de cancelar el costo del flete directamente a la agencia al momento de retirar su paquete.</p>
             
             <h3>3. Tiempos de Procesamiento y Despacho</h3>
             <p>Entendemos que quieres lucir tus prendas lo antes posible. Una vez que envíes tu comprobante y el pago sea verificado por nuestro equipo, tu pedido será empaquetado y despachado el día hábil siguiente. Los tiempos de tránsito estimados dependen exclusivamente de la logística de la agencia de encomiendas (generalmente demoran entre 2 a 4 días hábiles).</p>
@@ -425,7 +442,7 @@ function renderThankYou() {
                 <h3 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; color: var(--color-text);">Únete a nuestra comunidad</h3>
                 <div class="social-icons" style="justify-content: center; gap: 25px;">
                     <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="https://www.tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
         </div>
@@ -441,13 +458,14 @@ function renderProduct(slug) {
 
     document.title = `${product.name} | Rom Store`;
 
-    window.currentProductImages = product.images;
+    window.currentProductImages = product.images || [];
     window.currentImageIndex = 0;
+    
+    const stockObj = product.stock || {};
 
-    // Ordenamiento Dinámico de COLORES: Los disponibles (true) van primero.
-    const colors = Object.keys(product.stock).sort((a, b) => {
-        const aHasStock = Object.values(product.stock[a]).some(v => v === true);
-        const bHasStock = Object.values(product.stock[b]).some(v => v === true);
+    const colors = Object.keys(stockObj).sort((a, b) => {
+        const aHasStock = Object.values(stockObj[a]).some(v => v === true);
+        const bHasStock = Object.values(stockObj[b]).some(v => v === true);
         return (aHasStock === bHasStock) ? 0 : aHasStock ? -1 : 1;
     });
 
@@ -455,7 +473,11 @@ function renderProduct(slug) {
         ? `<span class="old-price" style="font-size: 1.2rem; margin-right: 15px;">$${product.oldPrice.toFixed(2)}</span> <span style="color: var(--color-danger);">$${product.price.toFixed(2)}</span>`
         : `$${product.price.toFixed(2)}`;
 
-    const suggestions = getVisibleProducts().filter(p => p.id !== product.id && p.category.some(c => product.category.includes(c))).slice(0, 4);
+    // Protección extra (p.category || [])
+    const suggestions = getVisibleProducts().filter(p => 
+        p.id !== product.id && 
+        (p.category || []).some(c => (product.category || []).includes(c))
+    ).slice(0, 4);
 
     appRoot.innerHTML = `
         <div class="fade-in product-detail-container">
@@ -463,10 +485,10 @@ function renderProduct(slug) {
                 
                 <div class="main-image-wrapper" ontouchstart="handleTouchStart(event)" ontouchend="handleTouchEnd(event)">
                     ${product.outOfStock ? '<div class="badge" style="background:#555; top:20px; left:20px; z-index: 10;">AGOTADO</div>' : (product.onSale ? '<div class="badge" style="background:var(--color-danger); top:20px; left:20px; z-index: 10;">SALE</div>' : '')}
-                    <img src="${product.images[0]}" id="main-product-img" alt="${product.name}">
+                    <img src="${product.images && product.images.length > 0 ? product.images[0] : '/placeholder.jpg'}" id="main-product-img" alt="${product.name}">
                 </div>
 
-                ${product.images.length > 1 ? `
+                ${(product.images && product.images.length > 1) ? `
                 <div class="thumbnail-gallery-container">
                     <div class="thumbnail-scroll" id="thumbnail-scroll">
                         ${product.images.map((img, idx) => `<img src="${img}" id="thumb-${idx}" class="${idx === 0 ? 'active' : ''}" onclick="setMainImage(${idx})" alt="Miniatura ${idx + 1}">`).join('')}
@@ -489,7 +511,7 @@ function renderProduct(slug) {
                     <select id="select-color" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" onchange="updateSizes()">
                         <option value="" disabled selected>Elige un color</option>
                         ${colors.map(c => {
-                            const hasStock = Object.values(product.stock[c]).some(v => v === true);
+                            const hasStock = Object.values(stockObj[c]).some(v => v === true);
                             return `<option value="${c}" ${!hasStock ? 'disabled' : ''}>${c} ${!hasStock ? '(Agotado)' : ''}</option>`;
                         }).join('')}
                     </select>
@@ -541,7 +563,7 @@ function renderProduct(slug) {
         ` : ''}
     `;
 
-    window.currentProductStock = product.stock;
+    window.currentProductStock = stockObj;
 }
 
 function createProductCard(p) {
@@ -554,7 +576,7 @@ function createProductCard(p) {
         <a href="/producto/${generateSlug(p.name)}" data-route class="product-card fade-in">
             ${badge}
             <div class="product-card-img-wrapper">
-                <img src="${p.images[0]}" alt="${p.name}" loading="lazy">
+                <img src="${p.images && p.images.length > 0 ? p.images[0] : '/placeholder.jpg'}" alt="${p.name}" loading="lazy">
             </div>
             <div class="product-info">
                 <h3>${p.name}</h3>
@@ -568,6 +590,7 @@ function createProductCard(p) {
 
 window.setMainImage = function(index) {
     const images = window.currentProductImages;
+    if (!images || images.length === 0) return;
     
     if (index < 0) index = images.length - 1;
     if (index >= images.length) index = 0;
@@ -591,7 +614,7 @@ window.changeImage = function(direction) {
 
 window.scrollThumbnails = function(direction) {
     const scroll = document.getElementById('thumbnail-scroll');
-    scroll.scrollBy({ left: direction * 150, behavior: 'smooth' });
+    if(scroll) scroll.scrollBy({ left: direction * 150, behavior: 'smooth' });
 }
 
 window.handleTouchStart = function(e) {
@@ -638,7 +661,6 @@ window.updateSizes = function() {
     if(selectedColor && window.currentProductStock[selectedColor]) {
         const sizesObj = window.currentProductStock[selectedColor];
         
-        // Ordenamiento Dinámico de TALLAS: Las disponibles (true) van primero.
         const sortedSizes = Object.keys(sizesObj).sort((a, b) => {
             const aHasStock = sizesObj[a];
             const bHasStock = sizesObj[b];
@@ -682,11 +704,13 @@ window.addToCart = function(id) {
 
 function updateCartBadge() {
     const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-    cartCountEl.innerText = totalItems;
-    if (totalItems === 0) {
-        cartCountEl.style.display = 'none';
-    } else {
-        cartCountEl.style.display = 'flex';
+    if(cartCountEl) {
+        cartCountEl.innerText = totalItems;
+        if (totalItems === 0) {
+            cartCountEl.style.display = 'none';
+        } else {
+            cartCountEl.style.display = 'flex';
+        }
     }
 }
 
@@ -742,7 +766,7 @@ function renderCart() {
 
     cartItemsContainer.innerHTML = clearCartHTML + cart.map((item, index) => `
         <div class="fade-in" style="display: flex; gap: 15px; padding: 20px; border-bottom: 1px solid var(--color-border);">
-            <img src="${item.images[0]}" style="width: 80px; height: 100px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
+            <img src="${item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'}" style="width: 80px; height: 100px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <h4 style="font-size: 0.9rem; margin-bottom: 5px; font-weight: 700; text-transform: uppercase;">${item.name}</h4>
                 <p style="font-size: 0.8rem; color: var(--color-text-light); margin-bottom: 5px;">Color: ${item.selectedColor} | Talla: ${item.selectedSize}</p>
@@ -761,102 +785,110 @@ function renderCart() {
         </div>
     `).join('');
 
-    const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    cartTotalEl.innerText = `$${total.toFixed(2)}`;
+    if (cartTotalEl) {
+        const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        cartTotalEl.innerText = `$${total.toFixed(2)}`;
+    }
 }
 
 // --- 8. CHECKOUT A WHATSAPP Y PÁGINA DE GRACIAS ---
 
-checkoutBtn.addEventListener('click', () => {
-    if(cart.length === 0) return;
-    
-    wppModal.classList.add('active');
-    modalOverlay.classList.add('active');
-    customerNameInput.focus();
-});
-
-confirmWppBtn.addEventListener('click', () => {
-    const customerName = customerNameInput.value;
-
-    let msg = "*ORDEN DE COMPRA | ROM STORE*\n";
-    msg += "━━━━━━━━━━━━━━━━━━\n\n";
-    
-    if (customerName.trim() !== '') {
-        msg += `*Cliente:* ${customerName.trim()}\n\n`;
-    }
-
-    cart.forEach((item, index) => {
-        msg += `*${index + 1}. ${item.name.toUpperCase()} (x${item.qty})*\n`;
-        msg += `- Color: ${item.selectedColor}\n`;
-        msg += `- Talla: ${item.selectedSize}\n`;
-        msg += `- Precio: $${(item.price * item.qty).toFixed(2)}\n\n`;
+if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+        if(cart.length === 0) return;
+        
+        wppModal.classList.add('active');
+        modalOverlay.classList.add('active');
+        customerNameInput.focus();
     });
+}
 
-    const total = cart.reduce((s, i) => s + (i.price * i.qty), 0).toFixed(2);
-    msg += "━━━━━━━━━━━━━━━━━━\n";
-    msg += `*TOTAL A PAGAR: $${total}*\n`;
-    msg += "_(Sin incluir delivery o envíos nacionales)_\n\n";
-    msg += "¡Hola! Quisiera procesar esta orden y conocer los métodos de entrega y de pago disponibles.";
+if (confirmWppBtn) {
+    confirmWppBtn.addEventListener('click', () => {
+        const customerName = customerNameInput.value;
 
-    const whatsappUrl = `https://wa.me/${wppNumber}?text=${encodeURIComponent(msg)}`;
-    
-    localStorage.setItem('rom_last_order_url', whatsappUrl);
+        let msg = "*ORDEN DE COMPRA | ROM STORE*\n";
+        msg += "━━━━━━━━━━━━━━━━━━\n\n";
+        
+        if (customerName.trim() !== '') {
+            msg += `*Cliente:* ${customerName.trim()}\n\n`;
+        }
 
-    cart = [];
-    saveCart();
-    updateCartBadge();
-    closeAllUI(); 
-    
-    customerNameInput.value = '';
+        cart.forEach((item, index) => {
+            msg += `*${index + 1}. ${item.name.toUpperCase()} (x${item.qty})*\n`;
+            msg += `- Color: ${item.selectedColor}\n`;
+            msg += `- Talla: ${item.selectedSize}\n`;
+            msg += `- Precio: $${(item.price * item.qty).toFixed(2)}\n\n`;
+        });
 
-    window.open(whatsappUrl, '_blank');
-    
-    navigateTo('/checkout/gracias');
-});
+        const total = cart.reduce((s, i) => s + (i.price * i.qty), 0).toFixed(2);
+        msg += "━━━━━━━━━━━━━━━━━━\n";
+        msg += `*TOTAL A PAGAR: $${total}*\n`;
+        msg += "_(Sin incluir delivery o envíos nacionales)_\n\n";
+        msg += "¡Hola! Quisiera procesar esta orden y conocer los métodos de entrega y de pago disponibles.";
+
+        const whatsappUrl = `https://wa.me/${wppNumber}?text=${encodeURIComponent(msg)}`;
+        
+        localStorage.setItem('rom_last_order_url', whatsappUrl);
+
+        cart = [];
+        saveCart();
+        updateCartBadge();
+        closeAllUI(); 
+        
+        customerNameInput.value = '';
+
+        window.open(whatsappUrl, '_blank');
+        
+        navigateTo('/checkout/gracias');
+    });
+}
 
 // --- 9. MOTOR DE BÚSQUEDA (Debounce Optimizado) ---
 let searchTimeout;
-searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        const query = e.target.value.toLowerCase().trim();
-        
-        if (query.length < 2) {
-            searchResults.innerHTML = '';
-            return;
-        }
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = e.target.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
 
-        const results = getVisibleProducts().filter(p => 
-            p.name.toLowerCase().includes(query) || 
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(query)))
-        );
+            const results = getVisibleProducts().filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                ((p.tags || []).some(t => t.toLowerCase().includes(query)))
+            );
 
-        if (results.length === 0) {
-            searchResults.innerHTML = `
-                <div style="padding: 30px; text-align: center; color: var(--color-text-light);">
-                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.3;"></i>
-                    <p style="font-size: 0.9rem;">No encontramos nada para "${query}".</p>
-                </div>`;
-            return;
-        }
+            if (results.length === 0) {
+                searchResults.innerHTML = `
+                    <div style="padding: 30px; text-align: center; color: var(--color-text-light);">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p style="font-size: 0.9rem;">No encontramos nada para "${query}".</p>
+                    </div>`;
+                return;
+            }
 
-        searchResults.innerHTML = results.map(p => {
-            const priceDisplay = (p.onSale && p.oldPrice) 
-                ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: #999; margin-right: 5px;">$${p.oldPrice.toFixed(2)}</span><span style="color: var(--color-danger);">$${p.price.toFixed(2)}</span>` 
-                : `$${p.price.toFixed(2)}`;
+            searchResults.innerHTML = results.map(p => {
+                const priceDisplay = (p.onSale && p.oldPrice) 
+                    ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: #999; margin-right: 5px;">$${p.oldPrice.toFixed(2)}</span><span style="color: var(--color-danger);">$${p.price.toFixed(2)}</span>` 
+                    : `$${p.price.toFixed(2)}`;
 
-            return `
-                <a href="/producto/${generateSlug(p.name)}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
-                    <img src="${p.images[0]}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
-                    <div>
-                        <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; text-transform: uppercase;">${p.name}</h4>
-                        <span style="font-weight: 700; font-size: 0.95rem;">${priceDisplay}</span>
-                    </div>
-                </a>
-            `;
-        }).join('');
-    }, 300); 
-});
+                return `
+                    <a href="/producto/${generateSlug(p.name)}" data-route class="fade-in" style="display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid var(--color-border); align-items: center; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'" onclick="closeSearchModal()">
+                        <img src="${p.images && p.images.length > 0 ? p.images[0] : '/placeholder.jpg'}" style="width: 50px; height: 60px; object-fit: cover; border-radius: 4px; background: #f4f4f4;">
+                        <div>
+                            <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; text-transform: uppercase;">${p.name}</h4>
+                            <span style="font-weight: 700; font-size: 0.95rem;">${priceDisplay}</span>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        }, 300); 
+    });
+}
 
 // --- 10. INICIALIZACIÓN DE ACORDEONES (FOOTER MÓVIL) ---
 function initAccordions() {

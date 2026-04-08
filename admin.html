@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panel de Administración | ROM STORE</title>
+    <meta name="robots" content="noindex, nofollow"> <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+    <div id="auth-view" class="auth-container">
+        <div class="auth-box">
+            <img src="/logovertical.png" alt="ROM STORE" class="admin-logo">
+            <h2>Acceso Restringido</h2>
+            <p>Ingresa tus credenciales para gestionar el inventario.</p>
+            <form id="login-form" onsubmit="event.preventDefault();">
+                <div class="form-group">
+                    <input type="email" id="admin-email" placeholder="Correo Electrónico" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="admin-password" placeholder="Contraseña" required>
+                </div>
+                <button type="submit" id="login-btn" class="btn-primary">Iniciar Sesión <i class="fas fa-arrow-right"></i></button>
+                <div id="login-error" class="error-msg hidden">Credenciales incorrectas.</div>
+            </form>
+        </div>
+    </div>
+
+    <div id="admin-view" class="dashboard-container hidden">
+        <header class="admin-header">
+            <div class="header-left">
+                <h2>📦 Inventario ROM</h2>
+            </div>
+            <button id="logout-btn" class="btn-icon danger"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </header>
+
+        <main class="admin-main">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="admin-search" placeholder="Buscar producto...">
+                </div>
+                <button id="add-product-btn" class="btn-primary"><i class="fas fa-plus"></i> Nuevo Drop</button>
+            </div>
+
+            <div id="admin-products-grid" class="admin-grid">
+                <div class="loading-state">Cargando inventario...</div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay hidden" id="product-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Producto</h3>
+                <button id="close-modal-btn" class="btn-icon"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="product-form">
+                    <input type="hidden" id="prod-id">
+                    
+                    <div class="form-section">
+                        <h4>Información General</h4>
+                        <div class="form-group">
+                            <label>Nombre del Producto *</label>
+                            <input type="text" id="prod-name" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Precio ($) *</label>
+                                <input type="number" step="0.01" id="prod-price" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Precio Oferta (Tachado)</label>
+                                <input type="number" step="0.01" id="prod-oldprice">
+                            </div>
+                            <div class="form-group">
+                                <label>Orden (Menor sale primero)</label>
+                                <input type="number" id="prod-order" value="999">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Categorías (separadas por coma Ej: Damas, Caballeros)</label>
+                            <input type="text" id="prod-category">
+                        </div>
+                        <div class="form-group">
+                            <label>Etiquetas / Tags (separadas por coma)</label>
+                            <input type="text" id="prod-tags">
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <textarea id="prod-description" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Imágenes (URLs de ImgBB)</h4>
+                        <div id="images-container">
+                            </div>
+                        <button type="button" id="add-image-btn" class="btn-secondary mt-10"><i class="fas fa-image"></i> Agregar URL de Imagen</button>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Stock y Variantes (Colores y Tallas)</h4>
+                        <p class="helper-text">Agrega colores y activa/desactiva tallas individualmente.</p>
+                        <div id="stock-container">
+                            </div>
+                        <button type="button" id="add-color-btn" class="btn-secondary mt-10"><i class="fas fa-palette"></i> Nuevo Color</button>
+                    </div>
+
+                    <div class="form-section toggles-section">
+                        <h4>Estados del Producto</h4>
+                        <label class="toggle-container">
+                            <span class="toggle-label">En Promoción (Sale)</span>
+                            <div class="switch">
+                                <input type="checkbox" id="prod-onsale">
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                        <label class="toggle-container">
+                            <span class="toggle-label">Agotado Global (Out Of Stock)</span>
+                            <div class="switch">
+                                <input type="checkbox" id="prod-outofstock">
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                        <label class="toggle-container">
+                            <span class="toggle-label" style="color: var(--color-danger);">Ocultar de la Tienda (Hidden)</span>
+                            <div class="switch">
+                                <input type="checkbox" id="prod-hidden">
+                                <span class="slider danger-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="save-product-btn" class="btn-primary full-width">Guardar Producto <i class="fas fa-save"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/admin.js"></script>
+</body>
+</html>
