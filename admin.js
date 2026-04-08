@@ -3,7 +3,8 @@
 // --- 1. CONFIGURACIÓN DE SUPABASE ---
 const supabaseUrl = 'https://hvgthlomkgzzibxaveap.supabase.co';
 const supabaseKey = 'sb_publishable_BkKlInWSSDxn1AC-8IQ7yQ_3Ia_FqQT';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// SOLUCIÓN: Renombrado a supabaseClient
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- 2. ESTADO GLOBAL ---
 let products = [];
@@ -48,13 +49,13 @@ const addColorBtn = document.getElementById('add-color-btn');
 
 // --- 4. AUTENTICACIÓN ---
 async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     currentSession = session;
     toggleViews();
     if (session) fetchProducts();
 }
 
-supabase.auth.onAuthStateChange((event, session) => {
+supabaseClient.auth.onAuthStateChange((event, session) => {
     currentSession = session;
     toggleViews();
     if (session && event === 'SIGNED_IN') fetchProducts();
@@ -77,7 +78,7 @@ loginForm.addEventListener('submit', async (e) => {
     const loginBtn = document.getElementById('login-btn');
     loginBtn.innerHTML = 'Cargando...';
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabaseClient.auth.signInWithPassword({
         email: emailInput.value,
         password: passwordInput.value
     });
@@ -90,14 +91,14 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
 });
 
 // --- 5. LECTURA DE PRODUCTOS (READ) ---
 async function fetchProducts() {
     productsGrid.innerHTML = '<div class="loading-state">Descargando inventario...</div>';
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('products')
         .select('*')
         .order('order', { ascending: true });
@@ -272,7 +273,6 @@ saveProductBtn.addEventListener('click', async () => {
     const categoryArr = inCategory.value.split(',').map(s => s.trim()).filter(s => s);
     const tagsArr = inTags.value.split(',').map(s => s.trim()).filter(s => s);
     
-    // FIX: 'inp.value' corregido para que no crashee
     const imgInputs = document.querySelectorAll('.img-input');
     const imagesArr = Array.from(imgInputs).map(inp => inp.value.trim()).filter(val => val !== '');
 
@@ -309,9 +309,9 @@ saveProductBtn.addEventListener('click', async () => {
     let response;
 
     if (isEdit) {
-        response = await supabase.from('products').update(productData).eq('id', inId.value);
+        response = await supabaseClient.from('products').update(productData).eq('id', inId.value);
     } else {
-        response = await supabase.from('products').insert([productData]);
+        response = await supabaseClient.from('products').insert([productData]);
     }
 
     saveProductBtn.disabled = false;
@@ -328,7 +328,7 @@ saveProductBtn.addEventListener('click', async () => {
 // --- 10. ELIMINAR PRODUCTO (DELETE) ---
 window.deleteProduct = async function(id) {
     if (confirm("¿Estás seguro de eliminar este producto PERMANENTEMENTE? Es recomendable usar la opción 'Ocultar' en su lugar.")) {
-        const { error } = await supabase.from('products').delete().eq('id', id);
+        const { error } = await supabaseClient.from('products').delete().eq('id', id);
         if (error) {
             alert("Error al eliminar: " + error.message);
         } else {
@@ -337,4 +337,5 @@ window.deleteProduct = async function(id) {
     }
 }
 
+// INICIAR
 checkSession();
