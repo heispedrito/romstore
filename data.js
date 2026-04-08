@@ -1,5 +1,5 @@
 // data.js - Inventario de ROM STORE
-const products = [
+const inventarioViejo = [
     { 
         id: 21, 
         order: 10,
