@@ -3,7 +3,8 @@
 // --- CONFIGURACIÓN SUPABASE ---
 const supabaseUrl = 'https://hvgthlomkgzzibxaveap.supabase.co';
 const supabaseKey = 'sb_publishable_BkKlInWSSDxn1AC-8IQ7yQ_3Ia_FqQT';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// SOLUCIÓN: Renombrado a supabaseClient para no chocar con la variable global del CDN
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
 let products = []; // Nace vacío y se llena desde Supabase
@@ -28,8 +29,8 @@ let touchEndX = 0;
 
 // --- CARGA INICIAL DESDE BASE DE DATOS (SUPABASE) ---
 window.addEventListener('DOMContentLoaded', async () => {
-    // Descargamos los productos públicos
-    const { data, error } = await supabase
+    // Descargamos los productos públicos usando supabaseClient
+    const { data, error } = await supabaseClient
         .from('products')
         .select('*')
         .eq('hidden', false) // Solo trae los que NO están ocultos
