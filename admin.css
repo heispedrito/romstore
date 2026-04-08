@@ -152,8 +152,30 @@ button {
     font-size: 0.95rem;
     background: var(--color-bg);
 }
-.form-group input, .form-group textarea { padding-left: 15px; } /* Reset padding for normal inputs */
+.form-group input, .form-group textarea { padding-left: 15px; } 
 .form-group input:focus, .form-group textarea:focus { outline: 1px solid var(--color-primary); }
+
+/* --- Checkboxes de Categorías --- */
+.checkbox-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    background: var(--color-bg);
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: none;
+    color: var(--color-text);
+}
+.checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
 
 /* --- Grid de Productos Administrativo --- */
 .admin-grid {
@@ -171,6 +193,25 @@ button {
     gap: 15px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     border: 1px solid var(--color-border);
+    cursor: grab;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-card:active { cursor: grabbing; }
+
+.admin-card.dragging {
+    opacity: 0.5;
+    border: 2px dashed var(--color-primary);
+    box-shadow: none;
+}
+
+/* Número de Orden visual */
+.card-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #ccc;
+    width: 35px;
+    text-align: center;
 }
 
 .admin-card img {
@@ -213,7 +254,7 @@ button {
     backdrop-filter: blur(3px);
     z-index: 2000;
     display: flex;
-    align-items: flex-end; /* Mobile: sale de abajo */
+    align-items: flex-end; 
     justify-content: center;
 }
 
@@ -272,7 +313,7 @@ button {
 /* Dinámicos: Imágenes y Stock */
 .dynamic-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 10px;
     align-items: center;
 }
@@ -284,8 +325,24 @@ button {
     border-radius: 6px;
     margin-bottom: 15px;
 }
+
 .color-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-.color-header input { font-weight: bold; width: 60%; }
+.color-header input { font-weight: bold; width: 50%; }
+
+/* Botones de control de orden (Flechas) */
+.order-controls {
+    display: flex;
+    gap: 5px;
+}
+.btn-order {
+    background: #eaeaec;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    color: var(--color-text);
+}
+.btn-order:hover { background: #d0d0d0; }
+
 .sizes-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .size-badge {
     border: 1px solid var(--color-border);
@@ -297,7 +354,7 @@ button {
     gap: 5px;
     background: #f9f9f9;
 }
-.size-badge input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+.size-badge input[type="checkbox"] { transform: scale(1.2); cursor: pointer; margin: 0; }
 
 /* --- Switches (Toggles iOS Style) --- */
 .toggles-section { display: flex; flex-direction: column; gap: 15px; }

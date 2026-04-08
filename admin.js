@@ -3,7 +3,6 @@
 // --- 1. CONFIGURACIÓN DE SUPABASE ---
 const supabaseUrl = 'https://hvgthlomkgzzibxaveap.supabase.co';
 const supabaseKey = 'sb_publishable_BkKlInWSSDxn1AC-8IQ7yQ_3Ia_FqQT';
-// SOLUCIÓN: Renombrado a supabaseClient
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- 2. ESTADO GLOBAL ---
@@ -35,12 +34,12 @@ const inName = document.getElementById('prod-name');
 const inPrice = document.getElementById('prod-price');
 const inOldPrice = document.getElementById('prod-oldprice');
 const inOrder = document.getElementById('prod-order');
-const inCategory = document.getElementById('prod-category');
 const inTags = document.getElementById('prod-tags');
 const inDesc = document.getElementById('prod-description');
 const inOnSale = document.getElementById('prod-onsale');
 const inOutOfStock = document.getElementById('prod-outofstock');
 const inHidden = document.getElementById('prod-hidden');
+const categoryCheckboxes = document.querySelectorAll('.cat-chk');
 
 const imagesContainer = document.getElementById('images-container');
 const addImageBtn = document.getElementById('add-image-btn');
@@ -94,7 +93,7 @@ logoutBtn.addEventListener('click', async () => {
     await supabaseClient.auth.signOut();
 });
 
-// --- 5. LECTURA DE PRODUCTOS (READ) ---
+// --- 5. LECTURA Y RENDERIZADO DE PRODUCTOS ---
 async function fetchProducts() {
     productsGrid.innerHTML = '<div class="loading-state">Descargando inventario...</div>';
     
@@ -118,12 +117,13 @@ function renderAdminProducts(items) {
         return;
     }
 
-    productsGrid.innerHTML = items.map(p => `
-        <div class="admin-card">
+    productsGrid.innerHTML = items.map((p, index) => `
+        <div class="admin-card" draggable="true" data-id="${p.id}">
+            <div class="card-number">${index + 1}</div>
             <img src="${p.images && p.images.length > 0 ? p.images[0] : '/placeholder.jpg'}" alt="Img">
             <div class="admin-card-info">
                 <h4>${p.name}</h4>
-                <p>$${p.price.toFixed(2)} | Orden: ${p.order}</p>
+                <p>$${p.price.toFixed(2)}</p>
             </div>
             <div class="admin-card-status">
                 ${p.hidden ? '<span class="badge-status hidden">Oculto</span>' : '<span class="badge-status active">Público</span>'}
@@ -136,6 +136,8 @@ function renderAdminProducts(items) {
             </div>
         </div>
     `).join('');
+
+    setupDragAndDrop();
 }
 
 searchInput.addEventListener('input', (e) => {
@@ -143,6 +145,72 @@ searchInput.addEventListener('input', (e) => {
     const filtered = products.filter(p => p.name.toLowerCase().includes(q));
     renderAdminProducts(filtered);
 });
+
+// --- 5.1. LÓGICA DE DRAG & DROP (ORDENAMIENTO) ---
+function setupDragAndDrop() {
+    const cards = document.querySelectorAll('.admin-card');
+    
+    cards.forEach(card => {
+        card.addEventListener('dragstart', () => {
+            card.classList.add('dragging');
+        });
+
+        card.addEventListener('dragend', async () => {
+            card.classList.remove('dragging');
+            await updateOrdersAfterDrag();
+        });
+    });
+
+    productsGrid.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(productsGrid, e.clientY);
+        const draggable = document.querySelector('.dragging');
+        if (draggable) {
+            if (afterElement == null) {
+                productsGrid.appendChild(draggable);
+            } else {
+                productsGrid.insertBefore(draggable, afterElement);
+            }
+        }
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.admin-card:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function updateOrdersAfterDrag() {
+    const cards = document.querySelectorAll('.admin-card');
+    const updates = [];
+    
+    // Actualizamos visualmente el DOM y guardamos los nuevos valores
+    cards.forEach((card, index) => {
+        const id = parseInt(card.dataset.id);
+        const newOrder = index + 1;
+        
+        card.querySelector('.card-number').innerText = newOrder;
+        
+        const prod = products.find(p => p.id === id);
+        if(prod) prod.order = newOrder;
+        
+        updates.push({ id: id, order: newOrder });
+    });
+
+    // Subimos los cambios a Supabase silenciosamente
+    await Promise.all(updates.map(u => 
+        supabaseClient.from('products').update({ order: u.order }).eq('id', u.id)
+    ));
+}
 
 // --- 6. GESTIÓN DEL MODAL ---
 function openModal(isEdit = false) {
@@ -156,28 +224,49 @@ function closeModal() {
     inId.value = '';
     imagesContainer.innerHTML = '';
     stockContainer.innerHTML = '';
+    categoryCheckboxes.forEach(chk => chk.checked = false);
 }
 
 closeModalBtn.addEventListener('click', closeModal);
 addProductBtn.addEventListener('click', () => {
     closeModal();
+    inOrder.value = products.length + 1; // Asigna por defecto el último número al crear uno nuevo
     openModal(false);
     addImageInput('');
 });
 
-// --- 7. LÓGICA DINÁMICA DE IMÁGENES ---
+// --- 7. FUNCIONES DE ORDENAMIENTO (ARRIBA/ABAJO) ---
+window.moveUp = function(btn) {
+    const row = btn.closest('.dynamic-row') || btn.closest('.color-block');
+    if (row.previousElementSibling) {
+        row.parentNode.insertBefore(row, row.previousElementSibling);
+    }
+}
+
+window.moveDown = function(btn) {
+    const row = btn.closest('.dynamic-row') || btn.closest('.color-block');
+    if (row.nextElementSibling) {
+        row.parentNode.insertBefore(row.nextElementSibling, row);
+    }
+}
+
+// --- 8. LÓGICA DINÁMICA DE IMÁGENES ---
 function addImageInput(val = '') {
     const div = document.createElement('div');
     div.className = 'dynamic-row';
     div.innerHTML = `
         <input type="url" class="img-input full-width" placeholder="URL de ImgBB" value="${val}">
+        <div class="order-controls">
+            <button type="button" class="btn-order" onclick="moveUp(this)"><i class="fas fa-arrow-up"></i></button>
+            <button type="button" class="btn-order" onclick="moveDown(this)"><i class="fas fa-arrow-down"></i></button>
+        </div>
         <button type="button" class="btn-icon danger" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
     `;
     imagesContainer.appendChild(div);
 }
 addImageBtn.addEventListener('click', () => addImageInput(''));
 
-// --- 8. LÓGICA DINÁMICA DE STOCK (JSONB) ---
+// --- 9. LÓGICA DINÁMICA DE STOCK (JSONB) ---
 function addColorBlock(colorName = '', sizesObj = {}) {
     const blockId = 'color-' + Date.now() + Math.random().toString(36).substring(7);
     const div = document.createElement('div');
@@ -194,7 +283,11 @@ function addColorBlock(colorName = '', sizesObj = {}) {
     div.innerHTML = `
         <div class="color-header">
             <input type="text" class="color-name-input" placeholder="Nombre del Color (Ej: Negro)" value="${colorName}">
-            <div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="order-controls">
+                    <button type="button" class="btn-order" onclick="moveUp(this)"><i class="fas fa-arrow-up"></i></button>
+                    <button type="button" class="btn-order" onclick="moveDown(this)"><i class="fas fa-arrow-down"></i></button>
+                </div>
                 <button type="button" class="btn-secondary" onclick="promptAddSize('${blockId}')"><i class="fas fa-plus"></i> Talla</button>
                 <button type="button" class="btn-icon danger" onclick="this.closest('.color-block').remove()"><i class="fas fa-trash"></i></button>
             </div>
@@ -227,7 +320,7 @@ window.promptAddSize = function(blockId) {
 
 addColorBtn.addEventListener('click', () => addColorBlock());
 
-// --- 9. CREAR / ACTUALIZAR PRODUCTO (CREATE & UPDATE) ---
+// --- 10. CREAR / ACTUALIZAR PRODUCTO ---
 window.editProduct = function(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
@@ -239,12 +332,17 @@ window.editProduct = function(id) {
     inPrice.value = p.price;
     inOldPrice.value = p.oldPrice || '';
     inOrder.value = p.order || 999;
-    inCategory.value = (p.category || []).join(', ');
     inTags.value = (p.tags || []).join(', ');
     inDesc.value = p.description || '';
     inOnSale.checked = p.onSale || false;
     inOutOfStock.checked = p.outOfStock || false;
     inHidden.checked = p.hidden || false;
+
+    // Cargar Categorías (Checkboxes)
+    const productCategories = p.category || [];
+    categoryCheckboxes.forEach(chk => {
+        chk.checked = productCategories.includes(chk.value);
+    });
 
     if (p.images && p.images.length > 0) {
         p.images.forEach(img => addImageInput(img));
@@ -270,7 +368,11 @@ saveProductBtn.addEventListener('click', async () => {
     saveProductBtn.innerHTML = "Guardando... <i class='fas fa-spinner fa-spin'></i>";
     saveProductBtn.disabled = true;
 
-    const categoryArr = inCategory.value.split(',').map(s => s.trim()).filter(s => s);
+    // Recolectar Categorías de los Checkboxes
+    const categoryArr = Array.from(categoryCheckboxes)
+        .filter(chk => chk.checked)
+        .map(chk => chk.value);
+
     const tagsArr = inTags.value.split(',').map(s => s.trim()).filter(s => s);
     
     const imgInputs = document.querySelectorAll('.img-input');
@@ -325,7 +427,7 @@ saveProductBtn.addEventListener('click', async () => {
     }
 });
 
-// --- 10. ELIMINAR PRODUCTO (DELETE) ---
+// --- 11. ELIMINAR PRODUCTO ---
 window.deleteProduct = async function(id) {
     if (confirm("¿Estás seguro de eliminar este producto PERMANENTEMENTE? Es recomendable usar la opción 'Ocultar' en su lugar.")) {
         const { error } = await supabaseClient.from('products').delete().eq('id', id);
