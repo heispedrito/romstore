@@ -1,15 +1,29 @@
-// app.js - Motor Lógico de ROM STORE (Conectado a Supabase)
+// app.js - Motor Lógico de ROM STORE (Conectado a Supabase + Funciones Premium)
 
 // --- CONFIGURACIÓN SUPABASE ---
 const supabaseUrl = 'https://hvgthlomkgzzibxaveap.supabase.co';
 const supabaseKey = 'sb_publishable_BkKlInWSSDxn1AC-8IQ7yQ_3Ia_FqQT';
-// SOLUCIÓN: Renombrado a supabaseClient para no chocar con la variable global del CDN
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
-let products = []; // Nace vacío y se llena desde Supabase
+let products = []; 
 let cart = JSON.parse(localStorage.getItem('rom_cart')) || [];
 const wppNumber = "584125019508"; 
+
+// Variables para Vistas
+window.currentCategoryProducts = []; 
+window.currentProductStock = {};
+
+// Variables para la Galería y Lightbox Interactiva
+window.currentImageIndex = 0;
+window.currentProductImages = [];
+let touchStartX = 0;
+let touchEndX = 0;
+
+// Variables para el Paneo (Zoom Panning)
+let isPanning = false;
+let startPanX = 0, startPanY = 0;
+let panX = 0, panY = 0;
 
 function saveCart() {
     localStorage.setItem('rom_cart', JSON.stringify(cart));
@@ -21,29 +35,22 @@ function getVisibleProducts() {
         .sort((a, b) => (a.order || 999) - (b.order || 999));
 }
 
-// Variables para la galería interactiva
-window.currentImageIndex = 0;
-window.currentProductImages = [];
-let touchStartX = 0;
-let touchEndX = 0;
-
 // --- CARGA INICIAL DESDE BASE DE DATOS (SUPABASE) ---
 window.addEventListener('DOMContentLoaded', async () => {
-    // Descargamos los productos públicos usando supabaseClient
     const { data, error } = await supabaseClient
         .from('products')
         .select('*')
-        .eq('hidden', false) // Solo trae los que NO están ocultos
+        .eq('hidden', false)
         .order('order', { ascending: true });
         
     if(data) {
         products = data;
     }
     
-    // Inicia la web una vez cargados los datos
     handleRoute();
     initAccordions(); 
     updateCartBadge(); 
+    initTypewriterEffect();
 });
 
 // --- 2. SELECTORES DEL DOM ---
@@ -68,7 +75,6 @@ const closeSearch = document.getElementById('close-search');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
 
-// Selectores Nuevos Modales
 const wppModal = document.getElementById('wpp-modal');
 const sizeGuideModal = document.getElementById('size-guide-modal');
 const closeWppModal = document.getElementById('close-wpp-modal');
@@ -76,7 +82,7 @@ const closeSizeModal = document.getElementById('close-size-modal');
 const confirmWppBtn = document.getElementById('confirm-wpp-btn');
 const customerNameInput = document.getElementById('customer-name-input');
 
-// --- HELPER: Generador de URLs Amigables (Slugs) ---
+// --- HELPER: Generador de URLs Amigables ---
 function generateSlug(text) {
     if (!text) return '';
     return text.toString().toLowerCase()
@@ -88,16 +94,31 @@ function generateSlug(text) {
         .replace(/\-\-+/g, '-');            
 }
 
-// --- 3. GESTIÓN DE INTERFACES (UI) ---
+// --- 3. GESTIÓN DE INTERFACES Y SCROLL LOCK TOTAL ---
+function lockScroll() {
+    // Bloqueamos tanto en body como en html para garantizar inmovilidad en iOS/Android
+    document.documentElement.classList.add('overflow-hidden');
+    document.body.classList.add('overflow-hidden');
+}
+window.lockScroll = lockScroll; // Fix para poder usarse desde onclick inline
+
+function unlockScroll() {
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+window.unlockScroll = unlockScroll; // Fix para poder usarse desde onclick inline
+
 function toggleMenu() {
     sideDrawer.classList.add('active');
     uiOverlay.classList.add('active');
+    lockScroll();
 }
 
 function toggleCart() {
     cartSidebar.classList.add('active');
     uiOverlay.classList.add('active');
     renderCart();
+    lockScroll();
 }
 
 function closeAllUI() {
@@ -108,7 +129,11 @@ function closeAllUI() {
     if(wppModal) wppModal.classList.remove('active');
     if(sizeGuideModal) sizeGuideModal.classList.remove('active');
     if(modalOverlay) modalOverlay.classList.remove('active');
+    
+    closeLightbox();
+    unlockScroll();
 }
+window.closeAllUI = closeAllUI; // Fix: expuesto globalmente para el botón "Continuar Comprando"
 
 menuTrigger.addEventListener('click', toggleMenu);
 closeMenu.addEventListener('click', closeAllUI);
@@ -120,7 +145,6 @@ if(closeWppModal) closeWppModal.addEventListener('click', closeAllUI);
 if(closeSizeModal) closeSizeModal.addEventListener('click', closeAllUI);
 if(modalOverlay) modalOverlay.addEventListener('click', closeAllUI);
 
-// Cerrar modales con la tecla Escape
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeAllUI();
@@ -128,7 +152,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Cerrar buscador al hacer clic afuera
 document.addEventListener('click', (e) => {
     if (searchModal.classList.contains('active')) {
         if (!searchModal.contains(e.target) && !searchTrigger.contains(e.target)) {
@@ -137,33 +160,69 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Búsqueda SIN bloqueo de scroll (se puede navegar de fondo)
 searchTrigger.addEventListener('click', () => {
     if (searchModal.classList.contains('active')) {
         closeSearchModal();
         return;
     }
-    searchModal.style.display = 'block';
+    searchModal.classList.add('active');
     setTimeout(() => {
-        searchModal.classList.add('active');
         searchInput.focus();
-    }, 10);
+    }, 300);
 });
 
 function closeSearchModal() {
     searchModal.classList.remove('active');
     setTimeout(() => {
-        searchModal.style.display = 'none';
         searchInput.value = '';
         searchResults.innerHTML = '';
     }, 400); 
 }
-closeSearch.addEventListener('click', closeSearchModal);
+window.closeSearchModal = closeSearchModal; // Fix para enlaces de resultados
+closeSearch.addEventListener('click', closeSearchModal); // LÍNEA RESTAURADA: Hace funcionar el botón X
 
-// --- 4. ENRUTAMIENTO SPA (History API) ---
+// --- EFECTO MÁQUINA DE ESCRIBIR (BUSCADOR) ---
+function initTypewriterEffect() {
+    if (!searchInput) return;
+    const searchTerms = ["prendas...", "estilos...", "marcas...", "novedades..."];
+    let termIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+
+    function type() {
+        const currentTerm = searchTerms[termIndex];
+        
+        if (isDeleting) {
+            searchInput.setAttribute('placeholder', 'Buscar ' + currentTerm.substring(0, charIndex - 1));
+            charIndex--;
+        } else {
+            searchInput.setAttribute('placeholder', 'Buscar ' + currentTerm.substring(0, charIndex + 1));
+            charIndex++;
+        }
+
+        let typeSpeed = isDeleting ? 50 : 100;
+
+        if (!isDeleting && charIndex === currentTerm.length) {
+            typeSpeed = 2000; 
+            isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            termIndex = (termIndex + 1) % searchTerms.length;
+            typeSpeed = 500; 
+        }
+
+        setTimeout(type, typeSpeed);
+    }
+    type();
+}
+
+// --- 4. ENRUTAMIENTO SPA ---
 function navigateTo(url) {
     history.pushState(null, null, url);
     handleRoute();
 }
+window.navigateTo = navigateTo; // Fix: expuesto globalmente para el botón "Continuar Comprando"
 
 document.body.addEventListener('click', e => {
     if (e.target.matches('[data-route], [data-route] *')) {
@@ -266,6 +325,38 @@ function renderHome() {
     `;
 }
 
+// --- FILTROS Y ORDENAMIENTO (SORTING) CON LÓGICA DE AGOTADOS ---
+window.applySort = function() {
+    const sortValue = document.getElementById('catalog-sort').value;
+    let sortedList = [...window.currentCategoryProducts];
+
+    // Empujar los agotados siempre al final
+    if (sortValue === 'price-asc') {
+        sortedList.sort((a, b) => {
+            if (a.outOfStock && !b.outOfStock) return 1;
+            if (!a.outOfStock && b.outOfStock) return -1;
+            return a.price - b.price;
+        });
+    } else if (sortValue === 'price-desc') {
+        sortedList.sort((a, b) => {
+            if (a.outOfStock && !b.outOfStock) return 1;
+            if (!a.outOfStock && b.outOfStock) return -1;
+            return b.price - a.price;
+        });
+    } else if (sortValue === 'available') {
+        sortedList = sortedList.filter(p => !p.outOfStock);
+    } else {
+        sortedList.sort((a, b) => (a.order || 999) - (b.order || 999));
+    }
+
+    const grid = document.getElementById('category-grid');
+    if (grid) {
+        grid.innerHTML = sortedList.length > 0 
+            ? sortedList.map(createProductCard).join('') 
+            : '<p style="grid-column: 1/-1; text-align: center; color: var(--color-text-light); padding: 50px 0;">No hay artículos disponibles con este filtro.</p>';
+    }
+};
+
 function renderCategory(slug) {
     let catName = "";
     let filtered = [];
@@ -278,11 +369,24 @@ function renderCategory(slug) {
     else { return renderHome(); }
 
     document.title = `${catName} | Rom Store`;
+    window.currentCategoryProducts = filtered;
 
     appRoot.innerHTML = `
         <div style="padding: 40px 10px; max-width: 1200px; margin: 0 auto; min-height: 60vh;">
-            <h2 class="fade-in" style="text-transform: uppercase; font-size: 1.8rem; margin-bottom: 30px; font-weight: 800; text-align: center;">${catName}</h2>
-            <div class="catalog-grid">
+            <h2 class="fade-in" style="text-transform: uppercase; font-size: 1.8rem; margin-bottom: 20px; font-weight: 800; text-align: center;">${catName}</h2>
+            
+            ${filtered.length > 0 ? `
+            <div class="filters-container">
+                <select class="sort-select" id="catalog-sort" onchange="applySort()">
+                    <option value="default">Recomendados</option>
+                    <option value="price-asc">Precio: Menor a Mayor</option>
+                    <option value="price-desc">Precio: Mayor a Menor</option>
+                    <option value="available">Solo disponibles</option>
+                </select>
+            </div>
+            ` : ''}
+
+            <div class="catalog-grid" id="category-grid">
                 ${filtered.length > 0 ? filtered.map(createProductCard).join('') : '<p style="grid-column: 1/-1; text-align: center; color: var(--color-text-light); padding: 50px 0;">No hay artículos disponibles por el momento.</p>'}
             </div>
         </div>
@@ -418,7 +522,6 @@ function renderPolicy(slug) {
 
 function renderThankYou() {
     document.title = "Pedido Confirmado | Rom Store";
-    
     const retryUrl = localStorage.getItem('rom_last_order_url') || `https://wa.me/${wppNumber}`;
 
     appRoot.innerHTML = `
@@ -439,23 +542,169 @@ function renderThankYou() {
                 </button>
             </div>
 
-            <div style="border-top: 1px solid var(--color-border); padding-top: 30px; width: 100%; max-width: 400px;">
-                <h3 style="font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; color: var(--color-text);">Únete a nuestra comunidad</h3>
-                <div class="social-icons" style="justify-content: center; gap: 25px;">
-                    <a href="https://instagram.com/rom.vzla" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="https://tiktok.com/@rom.vzla" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--color-border); padding-top: 30px; width: 100%; max-width: 400px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Únete a nuestra comunidad</h3>
+                <div style="display: flex; gap: 25px; justify-content: center; font-size: 2rem;">
+                    <a href="https://instagram.com/rom.vzla" target="_blank" style="color: var(--color-text); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.tiktok.com/@rom.vzla" target="_blank" style="color: var(--color-text); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
         </div>
     `;
 }
 
+// --- SELECCIÓN BIDIRECCIONAL (PRIORIDAD TALLA -> COLOR EN MISMA LÍNEA) ---
+window.updateVariantSelection = function(changedType) {
+    const sizeSel = document.getElementById('select-size');
+    const colorSel = document.getElementById('select-color');
+    const stockObj = window.currentProductStock;
+
+    if (changedType === 'size') {
+        const size = sizeSel.value;
+        colorSel.innerHTML = '<option value="" disabled selected>Elige color</option>';
+        
+        if (size) {
+            colorSel.disabled = false;
+            colorSel.style.background = 'transparent';
+            
+            Object.keys(stockObj).forEach(c => {
+                if (stockObj[c][size] === true) {
+                    colorSel.innerHTML += `<option value="${c}">${c}</option>`;
+                } else {
+                    colorSel.innerHTML += `<option value="${c}" disabled>${c} (Agotado)</option>`;
+                }
+            });
+        } else {
+            colorSel.disabled = true;
+            colorSel.style.background = '#f9f9f9';
+            colorSel.innerHTML = '<option value="" disabled selected>Primero elige talla</option>';
+        }
+    }
+}
+
+// --- LÓGICA LIGHTBOX Y ZOOM (PANEO INTERACTIVO) ---
+window.openLightbox = function() {
+    const overlay = document.getElementById('lightbox-overlay');
+    if(overlay) {
+        overlay.classList.add('active');
+        updateLightboxImage();
+        lockScroll();
+    }
+}
+
+window.closeLightbox = function() {
+    const overlay = document.getElementById('lightbox-overlay');
+    if(overlay) {
+        overlay.classList.remove('active');
+        const img = document.getElementById('lightbox-img');
+        if(img) {
+            img.classList.remove('zoomed');
+            img.style.transform = '';
+        }
+        isPanning = false;
+    }
+    unlockScroll();
+}
+
+window.updateLightboxImage = function() {
+    const img = document.getElementById('lightbox-img');
+    if(img && window.currentProductImages.length > 0) {
+        img.src = window.currentProductImages[window.currentImageIndex];
+    }
+    document.querySelectorAll('.lightbox-thumb-container img').forEach((thumb, i) => {
+        thumb.classList.toggle('active', i === window.currentImageIndex);
+    });
+}
+
+window.setLightboxImage = function(index) {
+    window.currentImageIndex = index;
+    updateLightboxImage();
+    setMainImage(index); // Sincroniza la imagen del fondo
+}
+
+window.toggleZoom = function(e) {
+    // Si se hizo clic en las flechas o algo que no sea la imagen principal, no hacer nada
+    if(e.target.tagName !== 'IMG') return;
+
+    const img = document.getElementById('lightbox-img');
+    if(!img) return;
+
+    if(img.classList.contains('zoomed')) {
+        img.classList.remove('zoomed');
+        img.style.transform = '';
+        panX = 0; panY = 0;
+    } else {
+        img.classList.add('zoomed');
+        img.style.transform = `scale(2.5) translate(0px, 0px)`;
+        panX = 0; panY = 0;
+    }
+}
+
+// Funciones de Paneo (Arrastre de la imagen en el Lightbox)
+window.startPan = function(e) {
+    const img = document.getElementById('lightbox-img');
+    if(!img || !img.classList.contains('zoomed')) return;
+    isPanning = true;
+    img.classList.add('no-transition');
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    startPanX = clientX - panX;
+    startPanY = clientY - panY;
+}
+
+window.doPan = function(e) {
+    if(!isPanning) return;
+    e.preventDefault(); // Evitar scroll nativo en móvil
+    
+    const img = document.getElementById('lightbox-img');
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    panX = clientX - startPanX;
+    panY = clientY - startPanY;
+    
+    // Aplicamos el movimiento respetando la escala (2.5)
+    img.style.transform = `scale(2.5) translate(${panX / 2.5}px, ${panY / 2.5}px)`;
+}
+
+window.endPan = function(e) {
+    isPanning = false;
+    const img = document.getElementById('lightbox-img');
+    if(img) img.classList.remove('no-transition');
+}
+
+// Funciones especiales de Swipe combinadas para el Lightbox
+window.handleLightboxTouchStart = function(e) {
+    const img = document.getElementById('lightbox-img');
+    if(img && img.classList.contains('zoomed')) {
+        startPan(e);
+    } else {
+        touchStartX = e.changedTouches[0].screenX;
+    }
+}
+
+window.handleLightboxTouchMove = function(e) {
+    const img = document.getElementById('lightbox-img');
+    if(img && img.classList.contains('zoomed')) {
+        doPan(e);
+    }
+}
+
+window.handleLightboxTouchEnd = function(e) {
+    const img = document.getElementById('lightbox-img');
+    if(img && img.classList.contains('zoomed')) {
+        endPan(e);
+    } else {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }
+}
+
 function renderProduct(slug) {
     const product = products.find(p => generateSlug(p.name) === slug);
-    
-    if (!product) {
-        return renderHome();
-    }
+    if (!product) return renderHome();
 
     document.title = `${product.name} | Rom Store`;
 
@@ -463,18 +712,28 @@ function renderProduct(slug) {
     window.currentImageIndex = 0;
     
     const stockObj = product.stock || {};
+    window.currentProductStock = stockObj;
 
-    const colors = Object.keys(stockObj).sort((a, b) => {
-        const aHasStock = Object.values(stockObj[a]).some(v => v === true);
-        const bHasStock = Object.values(stockObj[b]).some(v => v === true);
-        return (aHasStock === bHasStock) ? 0 : aHasStock ? -1 : 1;
+    // Extraer todos los colores y todas las tallas
+    const allColors = Object.keys(stockObj);
+    const allSizesSet = new Set();
+    
+    allColors.forEach(c => {
+        Object.keys(stockObj[c]).forEach(s => {
+            allSizesSet.add(s); 
+        });
+    });
+    
+    // Tallas que existen en al menos un color (para poblar el select principal)
+    const availableSizes = Array.from(allSizesSet).map(s => {
+        const hasStock = allColors.some(c => stockObj[c][s] === true);
+        return { name: s, available: hasStock };
     });
 
     const priceDisplay = (product.onSale && product.oldPrice) 
         ? `<span class="old-price" style="font-size: 1.2rem; margin-right: 15px;">$${product.oldPrice.toFixed(2)}</span> <span style="color: var(--color-danger);">$${product.price.toFixed(2)}</span>`
         : `$${product.price.toFixed(2)}`;
 
-    // Protección extra (p.category || [])
     const suggestions = getVisibleProducts().filter(p => 
         p.id !== product.id && 
         (p.category || []).some(c => (product.category || []).includes(c))
@@ -483,20 +742,21 @@ function renderProduct(slug) {
     appRoot.innerHTML = `
         <div class="fade-in product-detail-container">
             <div style="position: relative; width: 100%;">
-                
                 <div class="main-image-wrapper" ontouchstart="handleTouchStart(event)" ontouchend="handleTouchEnd(event)">
                     ${product.outOfStock ? '<div class="badge" style="background:#555; top:20px; left:20px; z-index: 10;">AGOTADO</div>' : (product.onSale ? '<div class="badge" style="background:var(--color-danger); top:20px; left:20px; z-index: 10;">SALE</div>' : '')}
-                    <img src="${product.images && product.images.length > 0 ? product.images[0] : '/placeholder.jpg'}" id="main-product-img" alt="${product.name}">
+                    
+                    ${(product.images && product.images.length > 1) ? `
+                        <button class="main-img-arrow left" aria-label="Anterior" onclick="changeImage(-1); event.stopPropagation();"><i class="fas fa-chevron-left"></i></button>
+                        <button class="main-img-arrow right" aria-label="Siguiente" onclick="changeImage(1); event.stopPropagation();"><i class="fas fa-chevron-right"></i></button>
+                    ` : ''}
+
+                    <img src="${product.images && product.images.length > 0 ? product.images[0] : '/placeholder.jpg'}" id="main-product-img" alt="${product.name}" onclick="openLightbox()">
                 </div>
 
                 ${(product.images && product.images.length > 1) ? `
                 <div class="thumbnail-gallery-container">
                     <div class="thumbnail-scroll" id="thumbnail-scroll">
                         ${product.images.map((img, idx) => `<img src="${img}" id="thumb-${idx}" class="${idx === 0 ? 'active' : ''}" onclick="setMainImage(${idx})" alt="Miniatura ${idx + 1}">`).join('')}
-                    </div>
-                    <div class="thumbnail-arrows">
-                        <button class="thumb-arrow" onclick="scrollThumbnails(-1)" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
-                        <button class="thumb-arrow" onclick="scrollThumbnails(1)" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
                 ` : ''}
@@ -507,39 +767,26 @@ function renderProduct(slug) {
                 <p style="font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 700; margin-bottom: 20px;">${priceDisplay}</p>
                 <p style="color: var(--color-text-light); margin-bottom: 30px; font-size: 0.95rem; line-height: 1.6;">${product.description || 'Diseñado para el confort diario y el rendimiento óptimo.'}</p>
                 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Color Seleccionado</label>
-                    <select id="select-color" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" onchange="updateSizes()">
-                        <option value="" disabled selected>Elige un color</option>
-                        ${colors.map(c => {
-                            const hasStock = Object.values(stockObj[c]).some(v => v === true);
-                            return `<option value="${c}" ${!hasStock ? 'disabled' : ''}>${c} ${!hasStock ? '(Agotado)' : ''}</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-                
-                <div style="margin-bottom: 25px; display: flex; gap: 15px;">
-                    <div style="flex: 2;">
+                <div class="variant-row">
+                    <div class="variant-col">
                         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
                             <label style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Talla</label>
-                            <button type="button" onclick="document.getElementById('size-guide-modal').classList.add('active'); document.getElementById('modal-overlay').classList.add('active');" style="font-size: 0.75rem; color: var(--color-text-light); text-decoration: underline; background: transparent; border: none; padding: 0; cursor: pointer; text-transform: none; font-weight: normal;">Guía de Tallas</button>
+                            <button type="button" onclick="document.getElementById('size-guide-modal').classList.add('active'); document.getElementById('modal-overlay').classList.add('active'); lockScroll();" class="guide-text-prof">Guía de Tallas</button>
                         </div>
-                        <select id="select-size" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" disabled>
-                            <option value="" disabled selected>Elige una talla</option>
+                        <select id="select-size" style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: transparent; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;" onchange="updateVariantSelection('size')">
+                            <option value="" disabled selected>Elige talla</option>
+                            ${availableSizes.map(s => `<option value="${s.name}" ${!s.available ? 'disabled' : ''}>${s.name} ${!s.available ? '(Agotado)' : ''}</option>`).join('')}
                         </select>
                     </div>
-                    
-                    <div style="flex: 1;">
-                        <label style="display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Cantidad</label>
-                        <div class="qty-selector-main">
-                            <button onclick="changeMainQty(-1)">-</button>
-                            <input type="number" id="main-qty" value="1" min="1" readonly>
-                            <button onclick="changeMainQty(1)">+</button>
-                        </div>
+                    <div class="variant-col">
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Color</label>
+                        <select id="select-color" disabled style="width: 100%; padding: 15px; border: 1px solid var(--color-border); background: #f9f9f9; font-family: inherit; font-size: 1rem; outline: none; border-radius: 4px;">
+                            <option value="" disabled selected>Primero elige talla</option>
+                        </select>
                     </div>
                 </div>
                 
-                <button class="btn-primary" onclick="addToCart(${product.id})" ${product.outOfStock ? 'disabled style="background: #ccc; color: #666; cursor: not-allowed;"' : 'style="padding: 18px; font-size: 1rem;"'}>
+                <button class="btn-primary" onclick="addToCart(${product.id})" ${product.outOfStock ? 'disabled style="background: #ccc; color: #666; cursor: not-allowed; box-shadow: none;"' : 'style="padding: 18px; font-size: 1rem; margin-top: 10px;"'}>
                     ${product.outOfStock ? 'AGOTADO' : 'Añadir a la Bolsa'}
                 </button>
                 
@@ -553,6 +800,20 @@ function renderProduct(slug) {
                 </div>
             </div>
         </div>
+
+        <div class="lightbox-overlay" id="lightbox-overlay">
+            <button class="lightbox-close" onclick="closeLightbox()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+            <div class="lightbox-content" id="lightbox-content"
+                 onmousedown="startPan(event)" onmousemove="doPan(event)" onmouseup="endPan(event)" onmouseleave="endPan(event)"
+                 ontouchstart="handleLightboxTouchStart(event)" ontouchmove="handleLightboxTouchMove(event)" ontouchend="handleLightboxTouchEnd(event)">
+                <img id="lightbox-img" src="" alt="Zoom de producto" onclick="toggleZoom(event)">
+            </div>
+            ${(product.images && product.images.length > 1) ? `
+            <div class="lightbox-thumb-container">
+                ${product.images.map((img, idx) => `<img src="${img}" onclick="setLightboxImage(${idx}); event.stopPropagation();" class="${idx === 0 ? 'active' : ''}" alt="Miniatura">`).join('')}
+            </div>
+            ` : ''}
+        </div>
         
         ${suggestions.length > 0 ? `
         <div style="max-width: 1200px; margin: 40px auto 0; padding: 0 10px 40px; border-top: 1px solid var(--color-border); padding-top: 40px;">
@@ -564,7 +825,7 @@ function renderProduct(slug) {
         ` : ''}
     `;
 
-    window.currentProductStock = stockObj;
+    updateVariantSelection('init');
 }
 
 function createProductCard(p) {
@@ -597,7 +858,14 @@ window.setMainImage = function(index) {
     if (index >= images.length) index = 0;
     
     window.currentImageIndex = index;
-    document.getElementById('main-product-img').src = images[index];
+    const mainImg = document.getElementById('main-product-img');
+    if(mainImg) {
+        mainImg.style.opacity = '0';
+        setTimeout(() => {
+            mainImg.src = images[index];
+            mainImg.style.opacity = '1';
+        }, 150);
+    }
 
     document.querySelectorAll('.thumbnail-scroll img').forEach((img, i) => {
         img.classList.toggle('active', i === index);
@@ -611,6 +879,10 @@ window.setMainImage = function(index) {
 
 window.changeImage = function(direction) {
     setMainImage(window.currentImageIndex + direction);
+    // Si el lightbox está abierto, también sincronizamos el cambio allí
+    if (document.getElementById('lightbox-overlay') && document.getElementById('lightbox-overlay').classList.contains('active')) {
+        updateLightboxImage();
+    }
 }
 
 window.scrollThumbnails = function(direction) {
@@ -636,14 +908,7 @@ function handleSwipe() {
     }
 }
 
-// --- 7. CANTIDADES, CARRITO Y TOASTS ---
-
-window.changeMainQty = function(change) {
-    const input = document.getElementById('main-qty');
-    let val = parseInt(input.value) + change;
-    if (val < 1) val = 1;
-    input.value = val;
-}
+// --- 7. CARRITO Y TOASTS (CANTIDAD EN PDP ELIMINADA, SOLO 1 POR DEFECTO) ---
 
 function showToast(message) {
     const container = document.getElementById('toast-container');
@@ -654,37 +919,15 @@ function showToast(message) {
     setTimeout(() => { toast.remove(); }, 2900);
 }
 
-window.updateSizes = function() {
-    const colorSelect = document.getElementById('select-color');
-    const sizeSelect = document.getElementById('select-size');
-    const selectedColor = colorSelect.value;
-    
-    if(selectedColor && window.currentProductStock[selectedColor]) {
-        const sizesObj = window.currentProductStock[selectedColor];
-        
-        const sortedSizes = Object.keys(sizesObj).sort((a, b) => {
-            const aHasStock = sizesObj[a];
-            const bHasStock = sizesObj[b];
-            return (aHasStock === bHasStock) ? 0 : aHasStock ? -1 : 1;
-        });
-        
-        sizeSelect.innerHTML = '<option value="" disabled selected>Elige una talla</option>' + 
-            sortedSizes.map(s => {
-                const isAvailable = sizesObj[s];
-                return `<option value="${s}" ${!isAvailable ? 'disabled' : ''}>${s} ${!isAvailable ? '(Agotado)' : ''}</option>`;
-            }).join('');
-            
-        sizeSelect.disabled = false;
-    }
-}
-
 window.addToCart = function(id) {
-    const color = document.getElementById('select-color')?.value;
-    const size = document.getElementById('select-size')?.value;
-    const qty = parseInt(document.getElementById('main-qty')?.value) || 1;
+    const sizeSel = document.getElementById('select-size');
+    const colorSel = document.getElementById('select-color');
+    const size = sizeSel ? sizeSel.value : null;
+    const color = colorSel ? colorSel.value : null;
+    const qty = 1; // Fijo a 1
     
-    if (!color || !size) {
-        alert("Por favor, selecciona un color y una talla antes de continuar.");
+    if (!size || !color) {
+        alert("Por favor, selecciona una talla y un color antes de continuar.");
         return;
     }
 
@@ -700,6 +943,15 @@ window.addToCart = function(id) {
     saveCart(); 
     updateCartBadge();
     showToast("Añadido a la bolsa");
+    
+    // Reinicio de los selectores luego de añadir al carrito
+    if (sizeSel) sizeSel.value = "";
+    if (colorSel) {
+        colorSel.innerHTML = '<option value="" disabled selected>Primero elige talla</option>';
+        colorSel.disabled = true;
+        colorSel.style.background = '#f9f9f9';
+    }
+
     toggleCart(); 
 }
 
@@ -758,9 +1010,10 @@ function renderCart() {
     if (cartFooterEl) cartFooterEl.classList.remove('d-none');
 
     let clearCartHTML = '';
-    if (totalItems > 3) {
+    // Vaciar bolsa aparece SOLO si hay MÁS de 3 productos distintos (filas) en el carrito
+    if (cart.length > 3) {
         clearCartHTML = `
-        <div style="padding: 10px 20px; text-align: right;">
+        <div class="clear-cart-container">
             <button onclick="clearCart()" class="clear-cart-btn">Vaciar Bolsa</button>
         </div>`;
     }
@@ -792,7 +1045,7 @@ function renderCart() {
     }
 }
 
-// --- 8. CHECKOUT A WHATSAPP Y PÁGINA DE GRACIAS ---
+// --- 8. CHECKOUT A WHATSAPP ---
 
 if (checkoutBtn) {
     checkoutBtn.addEventListener('click', () => {
@@ -800,6 +1053,7 @@ if (checkoutBtn) {
         
         wppModal.classList.add('active');
         modalOverlay.classList.add('active');
+        lockScroll();
         customerNameInput.focus();
     });
 }
@@ -845,7 +1099,7 @@ if (confirmWppBtn) {
     });
 }
 
-// --- 9. MOTOR DE BÚSQUEDA (Debounce Optimizado) ---
+// --- 9. MOTOR DE BÚSQUEDA EXCLUYENDO AGOTADOS ---
 let searchTimeout;
 if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -858,9 +1112,11 @@ if (searchInput) {
                 return;
             }
 
+            // Excluir productos agotados del resultado de búsqueda
             const results = getVisibleProducts().filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                ((p.tags || []).some(t => t.toLowerCase().includes(query)))
+                !p.outOfStock && 
+                (p.name.toLowerCase().includes(query) || 
+                ((p.tags || []).some(t => t.toLowerCase().includes(query))))
             );
 
             if (results.length === 0) {

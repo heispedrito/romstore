@@ -39,6 +39,13 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Scroll Lock - Bloqueo total (Afecta HTML y Body para iOS/Android) */
+html.overflow-hidden,
+body.overflow-hidden {
+    overflow: hidden !important;
+    height: 100% !important;
+}
+
 a {
     text-decoration: none;
     color: inherit;
@@ -120,11 +127,17 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--transition-fast);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+    will-change: transform;
 }
 
 .icon-btn:hover {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    color: var(--color-primary);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
 }
 
 .cart-icon {
@@ -158,6 +171,7 @@ button {
     pointer-events: none;
     z-index: 1005;
     transition: opacity var(--transition-smooth);
+    will-change: opacity;
 }
 
 .ui-overlay.active {
@@ -178,6 +192,7 @@ button {
     flex-direction: column;
     transition: transform var(--transition-smooth);
     box-shadow: 0 0 25px rgba(0,0,0,0.1);
+    will-change: transform;
 }
 
 .side-drawer {
@@ -225,10 +240,12 @@ button {
     font-weight: 600;
     text-transform: uppercase;
     display: inline-block;
+    transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
 .nav-link:hover {
     color: var(--color-text-light);
+    transform: translateX(5px);
 }
 
 .text-danger {
@@ -254,6 +271,7 @@ button {
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition-fast);
+    touch-action: none;
 }
 
 .modal-overlay.active {
@@ -268,6 +286,7 @@ button {
     transform: translate(-50%, -45%);
     width: 90%;
     max-width: 420px;
+    max-height: 85vh;
     background: var(--color-bg);
     border-radius: 8px;
     z-index: 1025;
@@ -302,29 +321,33 @@ button {
 
 .custom-modal-body {
     padding: 25px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
-/* --- Modal de Búsqueda (Dentro del Header) --- */
+/* --- Buscador --- */
 .search-modal {
     position: absolute;
-    top: 100%; 
+    top: 0;
     left: 0;
     width: 100%;
     background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
-    z-index: -1; 
-    padding: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    z-index: 20; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-15px);
-    transition: all var(--transition-smooth);
+    clip-path: inset(0 50% 0 50%);
+    transform: scale(0.98);
+    transition: opacity 0.3s ease, clip-path 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform, clip-path;
 }
 
 .search-modal.active {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+    transform: scale(1);
 }
 
 .search-container {
@@ -334,36 +357,45 @@ button {
     margin: 0 auto;
     align-items: center;
     position: relative;
+    height: var(--nav-height);
+    padding: 0 20px;
 }
 
 .search-icon-input {
     position: absolute;
-    left: 15px;
+    left: 20px;
     color: var(--color-text-light);
+    font-size: 1.1rem;
 }
 
 #search-input {
     flex: 1;
-    padding: 15px 15px 15px 45px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
+    height: 100%;
+    padding: 0 15px 0 35px;
+    border: none;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 1.1rem;
     outline: none;
-    background: #f9f9f9;
-    transition: border-color var(--transition-fast);
+    background: transparent;
+    color: var(--color-text);
 }
 
-#search-input:focus {
-    border-color: var(--color-primary);
-    background: var(--color-bg);
+#search-input::placeholder {
+    color: var(--color-text-light);
+    transition: opacity var(--transition-fast);
+}
+
+#search-input:focus::placeholder {
+    opacity: 0.5;
 }
 
 .search-results {
     max-width: 800px;
-    margin: 15px auto 0;
-    max-height: 50vh;
+    margin: 0 auto;
+    max-height: 60vh;
     overflow-y: auto;
+    padding: 0 20px;
+    border-top: 1px solid var(--color-border);
 }
 
 /* --- Componentes de Carrito --- */
@@ -375,7 +407,6 @@ button {
     flex-direction: column;
 }
 
-/* Clases específicas para UX del Carrito Vacío y Vaciar Bolsa */
 .empty-cart-container {
     display: flex;
     flex-direction: column;
@@ -388,20 +419,27 @@ button {
     flex: 1;
 }
 
+/* FIX: Botón Vaciar Bolsa reubicado, sin espacio blanco excesivo */
+.clear-cart-container {
+    padding: 10px 20px 0;
+    text-align: right;
+    margin-bottom: -10px;
+    position: relative;
+    z-index: 5;
+}
+
 .clear-cart-btn {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--color-text-light);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-decoration: underline;
     transition: color var(--transition-fast);
     background: none;
     border: none;
     cursor: pointer;
-    padding: 10px 20px;
-    text-align: right;
-    align-self: flex-end;
+    padding: 0;
 }
 
 .clear-cart-btn:hover {
@@ -442,11 +480,13 @@ button {
     text-transform: uppercase;
     letter-spacing: 1px;
     border-radius: 4px;
-    transition: background var(--transition-fast), transform 0.1s;
+    transition: background var(--transition-fast), transform 0.1s, box-shadow var(--transition-fast);
+    will-change: transform, box-shadow;
 }
 
 .checkout-btn:hover {
-    background-color: #222;
+    background-color: #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .checkout-btn:active {
@@ -474,6 +514,11 @@ button {
     background: #f4f4f4;
     font-weight: bold;
     font-size: 0.9rem;
+    transition: background var(--transition-fast);
+}
+
+.cart-qty-btn:hover {
+    background: #e0e0e0;
 }
 
 .cart-qty-input {
@@ -487,7 +532,9 @@ button {
 
 /* --- Botones Globales --- */
 .btn-primary {
-    display: inline-block;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
     text-align: center;
     background-color: var(--color-primary);
@@ -498,12 +545,52 @@ button {
     text-transform: uppercase;
     letter-spacing: 1px;
     border-radius: 4px;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), transform 0.1s, box-shadow var(--transition-fast);
     cursor: pointer;
+    will-change: transform, box-shadow;
 }
 
 .btn-primary:hover {
     background-color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+/* --- Filtros y Ordenamiento --- */
+.filters-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 10px;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.sort-select {
+    padding: 10px 35px 10px 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text);
+    background: var(--color-bg);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23111111%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px top 50%;
+    background-size: 10px auto;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sort-select:hover, .sort-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 /* --- Componentes de Producto (Grid y Tarjetas) --- */
@@ -511,7 +598,7 @@ button {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px 10px;
-    padding: 20px 10px;
+    padding: 0 10px 20px;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
@@ -523,6 +610,13 @@ button {
     display: block;
     min-width: 0; 
     width: 100%;
+    border-radius: 6px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    will-change: transform;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
 }
 
 .product-card-img-wrapper {
@@ -595,7 +689,7 @@ button {
     font-weight: 500;
 }
 
-/* --- Vista de Producto (Detalle Interactivo) --- */
+/* --- Vista de Producto (PDP Original Mejorado) --- */
 .product-detail-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -613,6 +707,7 @@ button {
     overflow: hidden;
     position: relative;
     margin-bottom: 10px;
+    cursor: pointer;
 }
 
 .main-image-wrapper img {
@@ -620,18 +715,68 @@ button {
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: opacity 0.3s ease;
 }
 
-/* === CARRUSEL DE MINIATURAS === */
+/* Flechas finas en la imagen principal */
+.main-img-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    border: none;
+}
+
+.main-img-arrow:hover {
+    background: #fff;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.main-img-arrow.left { left: 15px; }
+.main-img-arrow.right { right: 15px; }
+
+/* === CARRUSEL DE MINIATURAS CON BORDES TRANSPARENTES === */
 .thumbnail-gallery-container {
     position: relative;
     width: 100%;
     max-width: 360px; 
     margin: 15px auto 0; 
-    padding: 0 35px; 
+    padding: 0;
     box-sizing: border-box;
 }
 
+/* Gradientes para indicar scroll lateral */
+.thumbnail-gallery-container::before,
+.thumbnail-gallery-container::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 25px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.thumbnail-gallery-container::before {
+    left: 0;
+    background: linear-gradient(to right, var(--color-bg), transparent);
+}
+
+.thumbnail-gallery-container::after {
+    right: 0;
+    background: linear-gradient(to left, var(--color-bg), transparent);
+}
+
+/* FIX BUG RESPONSIVE: Centrado inteligente de imágenes de galería */
 .thumbnail-scroll {
     display: flex;
     gap: 10px;
@@ -640,9 +785,10 @@ button {
     scroll-snap-type: x mandatory;
     scrollbar-width: none; 
     -ms-overflow-style: none;
-    width: max-content; 
-    max-width: 100%;
-    margin: 0 auto;
+    width: max-content; /* Hace que se reduzca a su contenido si es menor al 100% */
+    max-width: 100%; /* Evita que desborde sin hacer scroll */
+    margin: 0 auto; /* Lo centra horizontalmente */
+    padding: 0 10px;
 }
 
 .thumbnail-scroll::-webkit-scrollbar {
@@ -671,74 +817,143 @@ button {
     opacity: 0.6;
 }
 
-.thumbnail-arrows {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    transform: translateY(-50%);
-    display: flex; 
-    justify-content: space-between;
+.thumbnail-scroll img:not(.active):hover {
+    opacity: 0.9;
+}
+
+/* --- Lightbox / Modal Zoom de Imagen --- */
+.lightbox-overlay {
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.85); 
+    backdrop-filter: blur(8px);
+    z-index: 3000; 
+    opacity: 0; 
     pointer-events: none; 
-}
-
-.thumb-arrow {
-    pointer-events: all;
-    background: var(--color-bg);
-    color: var(--color-primary);
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
+    transition: opacity 0.3s ease;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
     justify-content: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    font-size: 0.8rem;
-    border: 1px solid var(--color-border);
-    transition: transform var(--transition-fast), background var(--transition-fast);
-    cursor: pointer;
 }
 
-.thumb-arrow:hover {
-    transform: scale(1.1);
-    background: #f9f9f9;
+.lightbox-overlay.active { 
+    opacity: 1; 
+    pointer-events: all; 
 }
 
-.thumb-arrow:active {
-    transform: scale(0.95);
+.lightbox-close { 
+    position: absolute; 
+    top: 20px; 
+    right: 20px; 
+    font-size: 2rem; 
+    color: #fff; 
+    background: none; 
+    border: none; 
+    cursor: pointer; 
+    z-index: 3010; 
+    padding: 10px;
 }
 
-/* --- Selectores de Cantidad y Tallas --- */
-.qty-selector-main {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    height: 50px;
+.lightbox-content { 
+    position: relative; 
+    width: 100%; 
+    height: 70vh; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    overflow: hidden; 
+    touch-action: none;
 }
 
-.qty-selector-main button {
-    padding: 0 20px;
-    height: 100%;
-    background: #f9f9f9;
-    font-weight: bold;
-    font-size: 1.2rem;
+.lightbox-content img { 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain; 
+    transition: transform 0.3s ease; 
+    cursor: zoom-in; 
+    transform-origin: center;
+    will-change: transform;
 }
 
-.qty-selector-main input {
-    width: 50px;
-    text-align: center;
-    border: none;
-    font-weight: 600;
-    font-size: 1rem;
-    background: transparent;
+.lightbox-content img.zoomed { 
+    cursor: grab; 
 }
 
-/* FIX: Estilo visual para colores y tallas agotados */
+.lightbox-content img.zoomed:active { 
+    cursor: grabbing; 
+}
+
+.lightbox-content img.no-transition {
+    transition: none !important;
+}
+
+.lightbox-thumb-container { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 20px; 
+    max-width: 90vw; 
+    overflow-x: auto; 
+    padding: 10px 0; 
+    scrollbar-width: none; 
+}
+
+.lightbox-thumb-container::-webkit-scrollbar { 
+    display: none; 
+}
+
+.lightbox-thumb-container img { 
+    width: 50px; 
+    height: 50px; 
+    object-fit: cover; 
+    border-radius: 4px; 
+    border: 2px solid transparent; 
+    cursor: pointer; 
+    opacity: 0.6; 
+    transition: all 0.2s; 
+}
+
+.lightbox-thumb-container img.active { 
+    border-color: #fff; 
+    opacity: 1; 
+}
+
+.lightbox-thumb-container img:hover { 
+    opacity: 1; 
+}
+
+/* --- Selectores de Variante en una misma fila --- */
+.variant-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.variant-col {
+    flex: 1;
+}
+
 select option:disabled {
     color: #b0b0b0;
     background-color: #f4f4f4;
     font-style: italic;
+}
+
+/* --- Guía de Tallas Text Format --- */
+.guide-text-prof {
+    font-size: 0.75rem; 
+    color: var(--color-text-light); 
+    text-decoration: underline; 
+    background: transparent; 
+    border: none; 
+    padding: 0; 
+    cursor: pointer; 
+    text-transform: none; 
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+.guide-text-prof:hover {
+    color: var(--color-primary);
 }
 
 /* --- Hero Banners --- */
@@ -834,6 +1049,7 @@ select option:disabled {
     font-size: 1rem;
     outline: none;
     border-radius: 4px;
+    transition: border-color var(--transition-fast);
 }
 
 .newsletter-form input::placeholder {
@@ -893,11 +1109,13 @@ select option:disabled {
 
 .social-icons a {
     color: var(--color-text);
-    transition: color var(--transition-fast);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+    display: inline-block;
 }
 
 .social-icons a:hover {
     color: var(--color-text-light);
+    transform: translateY(-3px);
 }
 
 .accordion-group {
@@ -943,6 +1161,11 @@ select option:disabled {
 .footer-links a {
     font-size: 0.9rem;
     color: var(--color-text-light);
+    transition: color var(--transition-fast);
+}
+
+.footer-links a:hover {
+    color: var(--color-primary);
 }
 
 .footer-bottom {
@@ -962,13 +1185,6 @@ select option:disabled {
     gap: 15px;
     font-size: 1.5rem;
     color: var(--color-text-light);
-}
-
-.binance-svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    display: inline-block;
-    vertical-align: middle;
 }
 
 .footer-bottom p {
@@ -1005,11 +1221,12 @@ select option:disabled {
     box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
     z-index: 990;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    will-change: transform;
 }
 
 .floating-wpp:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+    transform: scale(1.1) translateY(-3px);
+    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.5);
 }
 
 /* --- Notificaciones Toast --- */
@@ -1071,7 +1288,7 @@ select option:disabled {
     .catalog-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 30px;
-        padding: 40px 20px;
+        padding: 0 20px 40px;
     }
 
     .product-detail-container {
@@ -1083,18 +1300,12 @@ select option:disabled {
     .thumbnail-gallery-container {
         max-width: 440px; 
         margin: 15px auto 0;
-        padding: 0 45px; 
+        padding: 0; 
     }
 
     .thumbnail-scroll img {
         width: 70px;
         height: 70px;
-    }
-
-    .thumb-arrow {
-        width: 32px;
-        height: 32px;
-        font-size: 0.9rem;
     }
 
     .top-navbar {

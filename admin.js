@@ -12,7 +12,6 @@ let currentSession = null;
 // --- 3. SELECTORES DEL DOM ---
 const authView = document.getElementById('auth-view');
 const adminView = document.getElementById('admin-view');
-
 const loginForm = document.getElementById('login-form');
 const emailInput = document.getElementById('admin-email');
 const passwordInput = document.getElementById('admin-password');
@@ -46,10 +45,18 @@ const addImageBtn = document.getElementById('add-image-btn');
 const stockContainer = document.getElementById('stock-container');
 const addColorBtn = document.getElementById('add-color-btn');
 
-// --- 4. AUTENTICACIÓN ---
+// --- 4. AUTENTICACIÓN Y PROTECCIÓN DE RUTA ---
 async function checkSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentSession = session;
+    
+    // FIX DE SEGURIDAD: Expulsión inmediata si no hay sesión
+    // Se permite entrar al login añadiendo "?access=admin" a la URL de forma temporal.
+    if (!session && !window.location.search.includes('access=admin')) {
+        window.location.replace('/');
+        return;
+    }
+
     toggleViews();
     if (session) fetchProducts();
 }
@@ -91,6 +98,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 logoutBtn.addEventListener('click', async () => {
     await supabaseClient.auth.signOut();
+    window.location.replace('/');
 });
 
 // --- 5. LECTURA Y RENDERIZADO DE PRODUCTOS ---
@@ -146,15 +154,12 @@ searchInput.addEventListener('input', (e) => {
     renderAdminProducts(filtered);
 });
 
-// --- 5.1. LÓGICA DE DRAG & DROP (ORDENAMIENTO) ---
+// --- 5.1. LÓGICA DE DRAG & DROP (ORDENAMIENTO MAIN) ---
 function setupDragAndDrop() {
     const cards = document.querySelectorAll('.admin-card');
     
     cards.forEach(card => {
-        card.addEventListener('dragstart', () => {
-            card.classList.add('dragging');
-        });
-
+        card.addEventListener('dragstart', () => { card.classList.add('dragging'); });
         card.addEventListener('dragend', async () => {
             card.classList.remove('dragging');
             await updateOrdersAfterDrag();
@@ -177,7 +182,6 @@ function setupDragAndDrop() {
 
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.admin-card:not(.dragging)')];
-
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
@@ -193,20 +197,15 @@ async function updateOrdersAfterDrag() {
     const cards = document.querySelectorAll('.admin-card');
     const updates = [];
     
-    // Actualizamos visualmente el DOM y guardamos los nuevos valores
     cards.forEach((card, index) => {
         const id = parseInt(card.dataset.id);
         const newOrder = index + 1;
-        
         card.querySelector('.card-number').innerText = newOrder;
-        
         const prod = products.find(p => p.id === id);
         if(prod) prod.order = newOrder;
-        
         updates.push({ id: id, order: newOrder });
     });
 
-    // Subimos los cambios a Supabase silenciosamente
     await Promise.all(updates.map(u => 
         supabaseClient.from('products').update({ order: u.order }).eq('id', u.id)
     ));
@@ -216,10 +215,12 @@ async function updateOrdersAfterDrag() {
 function openModal(isEdit = false) {
     modalTitle.innerText = isEdit ? "Editar Producto" : "Nuevo Drop";
     productModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; 
 }
 
 function closeModal() {
     productModal.classList.add('hidden');
+    document.body.style.overflow = 'auto'; 
     productForm.reset();
     inId.value = '';
     imagesContainer.innerHTML = '';
@@ -230,12 +231,12 @@ function closeModal() {
 closeModalBtn.addEventListener('click', closeModal);
 addProductBtn.addEventListener('click', () => {
     closeModal();
-    inOrder.value = products.length + 1; // Asigna por defecto el último número al crear uno nuevo
+    inOrder.value = products.length + 1;
     openModal(false);
     addImageInput('');
 });
 
-// --- 7. FUNCIONES DE ORDENAMIENTO (ARRIBA/ABAJO) ---
+// --- 7. ORDENAMIENTO DE IMÁGENES Y COLORES (ARRIBA/ABAJO) ---
 window.moveUp = function(btn) {
     const row = btn.closest('.dynamic-row') || btn.closest('.color-block');
     if (row.previousElementSibling) {
@@ -247,6 +248,21 @@ window.moveDown = function(btn) {
     const row = btn.closest('.dynamic-row') || btn.closest('.color-block');
     if (row.nextElementSibling) {
         row.parentNode.insertBefore(row.nextElementSibling, row);
+    }
+}
+
+// --- FIX: ORDENAMIENTO DINÁMICO DE TALLAS (IZQUIERDA/DERECHA) ---
+window.moveSizeLeft = function(btn) {
+    const badge = btn.closest('.size-badge');
+    if(badge.previousElementSibling) {
+        badge.parentNode.insertBefore(badge, badge.previousElementSibling);
+    }
+}
+
+window.moveSizeRight = function(btn) {
+    const badge = btn.closest('.size-badge');
+    if(badge.nextElementSibling) {
+        badge.parentNode.insertBefore(badge.nextElementSibling, badge);
     }
 }
 
@@ -282,7 +298,7 @@ function addColorBlock(colorName = '', sizesObj = {}) {
 
     div.innerHTML = `
         <div class="color-header">
-            <input type="text" class="color-name-input" placeholder="Nombre del Color (Ej: Negro)" value="${colorName}">
+            <input type="text" class="color-name-input" placeholder="Nombre (Ej: Negro)" value="${colorName}">
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div class="order-controls">
                     <button type="button" class="btn-order" onclick="moveUp(this)"><i class="fas fa-arrow-up"></i></button>
@@ -299,10 +315,15 @@ function addColorBlock(colorName = '', sizesObj = {}) {
     stockContainer.appendChild(div);
 }
 
+// FIX: Creador de Insignias de Talla con Flechas de Ordenamiento
 function createSizeBadge(sizeName, isAvailable = true) {
     const checked = isAvailable ? 'checked' : '';
     return `
         <label class="size-badge">
+            <div class="size-arrows">
+                <i class="fas fa-chevron-left size-arrow-btn" onclick="moveSizeLeft(this)"></i>
+                <i class="fas fa-chevron-right size-arrow-btn" onclick="moveSizeRight(this)"></i>
+            </div>
             <input type="checkbox" class="size-checkbox" value="${sizeName}" ${checked}> 
             ${sizeName}
             <i class="fas fa-times" style="color: red; margin-left: 5px; cursor:pointer;" onclick="this.parentElement.remove()"></i>
@@ -338,7 +359,6 @@ window.editProduct = function(id) {
     inOutOfStock.checked = p.outOfStock || false;
     inHidden.checked = p.hidden || false;
 
-    // Cargar Categorías (Checkboxes)
     const productCategories = p.category || [];
     categoryCheckboxes.forEach(chk => {
         chk.checked = productCategories.includes(chk.value);
@@ -368,7 +388,6 @@ saveProductBtn.addEventListener('click', async () => {
     saveProductBtn.innerHTML = "Guardando... <i class='fas fa-spinner fa-spin'></i>";
     saveProductBtn.disabled = true;
 
-    // Recolectar Categorías de los Checkboxes
     const categoryArr = Array.from(categoryCheckboxes)
         .filter(chk => chk.checked)
         .map(chk => chk.value);
@@ -381,6 +400,7 @@ saveProductBtn.addEventListener('click', async () => {
     const stockData = {};
     const colorBlocks = document.querySelectorAll('.color-block');
     
+    // Al armar el JSON, respeta el orden visual del DOM garantizado por las flechas
     colorBlocks.forEach(block => {
         const colorName = block.querySelector('.color-name-input').value.trim();
         if (colorName !== '') {

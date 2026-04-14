@@ -24,6 +24,7 @@ body {
     color: var(--color-text);
     font-family: var(--font-main);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; /* Fix: Evita scroll horizontal en móvil */
 }
 
 /* --- Utilidades --- */
@@ -81,10 +82,11 @@ button {
     align-items: center;
     justify-content: center;
     background-color: var(--color-bg);
+    padding: 0 15px;
 }
 
 .auth-box {
-    width: 90%;
+    width: 100%;
     max-width: 400px;
     text-align: center;
     padding: 40px 20px;
@@ -110,6 +112,8 @@ button {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 15px 40px;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .admin-header {
@@ -127,12 +131,13 @@ button {
     gap: 15px;
     margin-bottom: 30px;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 .search-box {
     flex: 1;
     position: relative;
-    min-width: 250px;
+    min-width: 100%;
 }
 
 .search-box i {
@@ -182,6 +187,7 @@ button {
     display: grid;
     grid-template-columns: 1fr;
     gap: 15px;
+    width: 100%;
 }
 
 .admin-card {
@@ -190,7 +196,7 @@ button {
     padding: 15px;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     border: 1px solid var(--color-border);
     cursor: grab;
@@ -205,12 +211,11 @@ button {
     box-shadow: none;
 }
 
-/* Número de Orden visual */
 .card-number {
     font-size: 1.5rem;
     font-weight: 800;
     color: #ccc;
-    width: 35px;
+    width: 30px;
     text-align: center;
 }
 
@@ -224,8 +229,9 @@ button {
 
 .admin-card-info {
     flex: 1;
+    min-width: 0; 
 }
-.admin-card-info h4 { font-size: 0.95rem; margin-bottom: 2px; }
+.admin-card-info h4 { font-size: 0.95rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-card-info p { font-size: 0.8rem; color: var(--color-text-light); }
 
 .admin-card-status {
@@ -307,8 +313,8 @@ button {
 .form-group label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; color: var(--color-text-light); }
 .helper-text { font-size: 0.75rem; color: var(--color-text-light); margin-bottom: 15px; }
 
-.form-row { display: flex; gap: 15px; }
-.form-row .form-group { flex: 1; }
+.form-row { display: flex; gap: 15px; flex-wrap: wrap; }
+.form-row .form-group { flex: 1; min-width: 120px; }
 
 /* Dinámicos: Imágenes y Stock */
 .dynamic-row {
@@ -326,10 +332,9 @@ button {
     margin-bottom: 15px;
 }
 
-.color-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-.color-header input { font-weight: bold; width: 50%; }
+.color-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 10px; }
+.color-header input { font-weight: bold; width: 100%; max-width: 200px; }
 
-/* Botones de control de orden (Flechas) */
 .order-controls {
     display: flex;
     gap: 5px;
@@ -348,13 +353,27 @@ button {
     border: 1px solid var(--color-border);
     padding: 5px 10px;
     border-radius: 4px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     background: #f9f9f9;
 }
 .size-badge input[type="checkbox"] { transform: scale(1.2); cursor: pointer; margin: 0; }
+
+/* Controles de orden para tallas */
+.size-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-right: 4px;
+}
+.size-arrow-btn {
+    font-size: 0.6rem;
+    color: #999;
+    padding: 0 4px;
+}
+.size-arrow-btn:hover { color: var(--color-primary); }
 
 /* --- Switches (Toggles iOS Style) --- */
 .toggles-section { display: flex; flex-direction: column; gap: 15px; }
@@ -390,4 +409,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     .modal-overlay { align-items: center; }
     .modal-content { border-radius: 12px; }
     .toolbar { flex-wrap: nowrap; }
+    .search-box { min-width: 250px; }
+    .color-header input { width: 50%; }
 }

@@ -9,6 +9,11 @@
     <meta name="theme-color" content="#000000">
     <link rel="icon" href="/favicon.png" type="image/png">
     
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/logovertical.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <meta property="og:title" content="ROM STORE | Elite Sportswear">
     <meta property="og:description" content="Descubre nuestra colección exclusiva. Ropa deportiva y streetwear de alto nivel.">
     <meta property="og:image" content="https://romstorevzla.vercel.app/banner-preview.jpg">
@@ -215,6 +220,20 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/app.js"></script>
+    <script type="module" src="/app.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('PWA Service Worker registrado con éxito:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Error al registrar PWA Service Worker:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
