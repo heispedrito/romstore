@@ -282,7 +282,7 @@ function addImageInput(val = '') {
 }
 addImageBtn.addEventListener('click', () => addImageInput(''));
 
-// --- 9. LÓGICA DINÁMICA DE STOCK (JSONB) ---
+// --- 9. LÓGICA DINÁMICA DE STOCK ---
 function addColorBlock(colorName = '', sizesObj = {}) {
     const blockId = 'color-' + Date.now() + Math.random().toString(36).substring(7);
     const div = document.createElement('div');
@@ -315,7 +315,7 @@ function addColorBlock(colorName = '', sizesObj = {}) {
     stockContainer.appendChild(div);
 }
 
-// FIX: Creador de Insignias de Talla con Flechas de Ordenamiento
+// Creador de Insignias de Talla
 function createSizeBadge(sizeName, isAvailable = true) {
     const checked = isAvailable ? 'checked' : '';
     return `
@@ -353,11 +353,22 @@ window.editProduct = function(id) {
     inPrice.value = p.price;
     inOldPrice.value = p.oldPrice || '';
     inOrder.value = p.order || 999;
-    inTags.value = (p.tags || []).join(', ');
     inDesc.value = p.description || '';
     inOnSale.checked = p.onSale || false;
     inOutOfStock.checked = p.outOfStock || false;
     inHidden.checked = p.hidden || false;
+
+    // Extraer el algoritmo de orden de colores desde los tags
+    let colorOrder = [];
+    let cleanTags = [];
+    (p.tags || []).forEach(t => {
+        if (t.startsWith('color_order:')) {
+            colorOrder = t.replace('color_order:', '').split('|');
+        } else {
+            cleanTags.push(t);
+        }
+    });
+    inTags.value = cleanTags.join(', ');
 
     const productCategories = p.category || [];
     categoryCheckboxes.forEach(chk => {
@@ -370,10 +381,21 @@ window.editProduct = function(id) {
         addImageInput('');
     }
 
+    // Renderizar los colores respetando el orden guardado
     if (p.stock && Object.keys(p.stock).length > 0) {
-        for (const [color, sizes] of Object.entries(p.stock)) {
-            addColorBlock(color, sizes);
-        }
+        const stockKeys = Object.keys(p.stock);
+        
+        stockKeys.sort((a, b) => {
+            let idxA = colorOrder.indexOf(a);
+            let idxB = colorOrder.indexOf(b);
+            if (idxA === -1) idxA = 999;
+            if (idxB === -1) idxB = 999;
+            return idxA - idxB;
+        });
+
+        stockKeys.forEach(color => {
+            addColorBlock(color, p.stock[color]);
+        });
     }
 
     openModal(true);
@@ -392,18 +414,21 @@ saveProductBtn.addEventListener('click', async () => {
         .filter(chk => chk.checked)
         .map(chk => chk.value);
 
-    const tagsArr = inTags.value.split(',').map(s => s.trim()).filter(s => s);
+    // Evitamos duplicar la etiqueta del orden filtrando cualquiera anterior
+    const tagsArr = inTags.value.split(',').map(s => s.trim()).filter(s => s && !s.startsWith('color_order:'));
     
     const imgInputs = document.querySelectorAll('.img-input');
     const imagesArr = Array.from(imgInputs).map(inp => inp.value.trim()).filter(val => val !== '');
 
     const stockData = {};
     const colorBlocks = document.querySelectorAll('.color-block');
+    const colorNames = [];
     
-    // Al armar el JSON, respeta el orden visual del DOM garantizado por las flechas
+    // Al armar el JSON, respetamos el orden visual del DOM y lo guardamos
     colorBlocks.forEach(block => {
         const colorName = block.querySelector('.color-name-input').value.trim();
         if (colorName !== '') {
+            colorNames.push(colorName);
             stockData[colorName] = {};
             const sizeCheckboxes = block.querySelectorAll('.size-checkbox');
             sizeCheckboxes.forEach(chk => {
@@ -411,6 +436,11 @@ saveProductBtn.addEventListener('click', async () => {
             });
         }
     });
+
+    // Inyección del algoritmo invisible
+    if (colorNames.length > 0) {
+        tagsArr.push('color_order:' + colorNames.join('|'));
+    }
 
     const productData = {
         name: inName.value.trim(),

@@ -25,6 +25,9 @@ let isPanning = false;
 let startPanX = 0, startPanY = 0;
 let panX = 0, panY = 0;
 
+// Orden personalizado de colores
+window.currentColorOrder = [];
+
 function saveCart() {
     localStorage.setItem('rom_cart', JSON.stringify(cart));
 }
@@ -567,17 +570,23 @@ window.updateVariantSelection = function(changedType) {
             colorSel.disabled = false;
             colorSel.style.background = 'transparent';
             
-            Object.keys(stockObj).forEach(c => {
+            // Leemos los colores y los ordenamos usando nuestro array global (alimentado en renderProduct)
+            let colors = Object.keys(stockObj);
+            colors.sort((a, b) => {
+                let idxA = window.currentColorOrder.indexOf(a);
+                let idxB = window.currentColorOrder.indexOf(b);
+                if (idxA === -1) idxA = 999;
+                if (idxB === -1) idxB = 999;
+                return idxA - idxB;
+            });
+            
+            colors.forEach(c => {
                 if (stockObj[c][size] === true) {
                     colorSel.innerHTML += `<option value="${c}">${c}</option>`;
                 } else {
                     colorSel.innerHTML += `<option value="${c}" disabled>${c} (Agotado)</option>`;
                 }
             });
-        } else {
-            colorSel.disabled = true;
-            colorSel.style.background = '#f9f9f9';
-            colorSel.innerHTML = '<option value="" disabled selected>Primero elige talla</option>';
         }
     }
 }
@@ -713,6 +722,15 @@ function renderProduct(slug) {
     
     const stockObj = product.stock || {};
     window.currentProductStock = stockObj;
+
+    // Detectamos el algoritmo invisible guardado en Admin para el orden de colores
+    window.currentColorOrder = [];
+    if (product.tags) {
+        const orderTag = product.tags.find(t => typeof t === 'string' && t.startsWith('color_order:'));
+        if (orderTag) {
+            window.currentColorOrder = orderTag.replace('color_order:', '').split('|');
+        }
+    }
 
     // Extraer todos los colores y todas las tallas
     const allColors = Object.keys(stockObj);
